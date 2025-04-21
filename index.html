@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatBot UTMACH</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            text-align: center;
+            padding: 20px;
+        }
+        /* Botón para abrir el chat */
+        /* Estilo del botón flotante con imagen */
+#chat-toggle {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+#chat-toggle img {
+    width: 70px;
+    height: auto;
+    transition: transform 0.2s ease-in-out;
+}
+
+#chat-toggle img:hover {
+    transform: scale(1.1);
+}
+        
+
+        /* Contenedor del chat flotante */
+        #chat-container {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            width: 350px;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+            display: none;
+            flex-direction: column;
+        }
+
+        #chatbox {
+            border: 1px solid #ccc;
+            padding: 10px;
+            height: 250px;
+            overflow-y: auto;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            text-align: left;
+        }
+
+        #userInput {
+            width: 75%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        button {
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .user-message {
+            text-align: right;
+            color: blue;
+        }
+
+        .bot-message {
+            text-align: left;
+            color: green;
+        }
+    </style>
+    <script>
+        const BASE_URL = window.location.origin;
+      </script>
+      
+</head>
+<body>
+
+   <!-- Botón flotante con imagen -->
+<button id="chat-toggle" onclick="toggleChat()">
+    <img src="paky.png" alt="ChatBot UTMACH" width="60">
+</button>
+
+    <!-- Contenedor del chat flotante -->
+    <div id="chat-container">
+        <h3>ChatBot UTMACH</h3>
+        <div id="chatbox"></div>
+        <input type="text" id="userInput" placeholder="Escribe tu pregunta..." onkeypress="handleKeyPress(event)">
+        <button onclick="sendMessage()">Enviar</button>
+    </div>
+
+    <script>
+        function toggleChat() {
+            let chatContainer = document.getElementById("chat-container");
+            if (chatContainer.style.display === "none" || chatContainer.style.display === "") {
+                chatContainer.style.display = "flex";
+            } else {
+                chatContainer.style.display = "none";
+            }
+        }
+
+    // Función para generar un ID único por usuario y guardarlo en LocalStorage
+function getUserId() {
+    let userId = localStorage.getItem("user_id");
+    if (!userId) {
+        userId = "user_" + Math.random().toString(36).substr(2, 9); // Genera un ID único
+        localStorage.setItem("user_id", userId);
+    }
+    return userId;
+}
+
+function sendMessage() {
+    let userMessage = document.getElementById("userInput").value;
+    let chatbox = document.getElementById("chatbox");
+    let userId = getUserId();  // Obtiene el ID del usuario desde LocalStorage
+
+    if (userMessage.trim() === "") return;
+
+    // Mostrar el mensaje del usuario
+    chatbox.innerHTML += `<p class="user-message"><strong>Tú:</strong> ${userMessage}</p>`;
+    document.getElementById("userInput").value = "";
+
+    fetch("http://127.0.0.1:8082/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: userId, message: userMessage })
+    })
+    .then(response => response.json())
+    .then(data => {
+        chatbox.innerHTML += `<p class="bot-message"><strong>Chatbot:</strong> ${data.response}</p>`;
+        chatbox.scrollTop = chatbox.scrollHeight; // Auto-scroll al final
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        chatbox.innerHTML += `<p style="color:red;">Error al conectar con el chatbot.</p>`;
+    });
+
+       }
+        let inactivityTimer; // Variable para rastrear la inactividad
+
+function toggleChat() {
+    let chatContainer = document.getElementById("chat-container");
+
+    if (chatContainer.style.display === "none" || chatContainer.style.display === "") {
+        chatContainer.style.display = "flex";
+        resetInactivityTimer(); // Reiniciar el temporizador al abrir el chat
+    } else {
+        chatContainer.style.display = "none";
+        clearTimeout(inactivityTimer); // Detener el temporizador si el usuario lo cierra manualmente
+    }
+}
+// Función para cerrar el chat automáticamente después de 2 minutos (120,000 ms)
+function closeChatAutomatically() {
+    let chatContainer = document.getElementById("chat-container");
+    chatContainer.style.display = "none";
+}
+// Reiniciar el temporizador cuando el usuario interactúa
+function resetInactivityTimer() {
+    clearTimeout(inactivityTimer);
+    inactivityTimer = setTimeout(closeChatAutomatically, 120000); // 120,000 ms = 2 minutos
+}
+// Detectar actividad del usuario dentro del chat
+document.getElementById("chat-container").addEventListener("mousemove", resetInactivityTimer);
+document.getElementById("chat-container").addEventListener("keydown", resetInactivityTimer);
+document.getElementById("chat-container").addEventListener("click", resetInactivityTimer);
+
+    </script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const form = document.getElementById("chat-form");
+        const input = document.getElementById("user-input");
+        const chatBox = document.getElementById("chat-box");
+
+        form.addEventListener("submit", async function(event) {
+            event.preventDefault();
+
+            const userMessage = input.value.trim();
+            if (!userMessage) return;
+
+            // Mostrar el mensaje del usuario
+            chatBox.value += "Tú: " + userMessage + "\n";
+            input.value = "";
+
+            try {
+                const response = await fetch("http://127.0.0.1:8082/chat", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        user_id: "usuario_prueba",
+                        message: userMessage,
+                    }),
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    chatBox.value += "Chatbot: " + data.response + "\n";
+                    chatBox.scrollTop = chatBox.scrollHeight; // Auto-scroll
+                } else {
+                    chatBox.value += "❌ Error al conectar con el servidor.\n";
+                }
+            } catch (error) {
+                chatBox.value += "❌ Error de red o servidor caído.\n";
+            }
+        });
+    });
+</script>
+
+</body>
+</html>

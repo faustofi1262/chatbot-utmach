@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Login - Chatbot UTMACH</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #007bff;
+      display: flex;
+      height: 100vh;
+      justify-content: center;
+      align-items: center;
+      margin: 0;
+    }
+    .login-box {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+      text-align: center;
+      width: 300px;
+    }
+    input {
+      width: 90%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    button {
+      background: #007bff;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+  </style>
+</head>
+<script>
+  const BASE_URL = window.location.origin;
+</script>
+
+<body>
+  <div class="login-box">
+    <h2>🔒 Login Panel Control</h2>
+    <input type="text" id="username" placeholder="Usuario"><br>
+    <input type="password" id="password" placeholder="Contraseña"><br>
+    <button onclick="login()">Ingresar</button>
+    <p id="mensaje" style="color: red; font-weight: bold;"></p>
+  </div>
+  <script>
+    async function login() {
+      const user = document.getElementById('username').value;
+      const pass = document.getElementById('password').value;
+  
+      const res = await fetch(BASE_URL + "/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: user, password: pass })
+      });
+  
+      const data = await res.json();
+  
+      if (res.ok) {
+        window.location.href = "/monitor";
+      } else {
+        document.getElementById("mensaje").textContent = data.error || "Error al iniciar sesión.";
+      }
+    }
+  </script>
+    </body>
+</html>
