@@ -9,6 +9,9 @@ import pinecone  # ✅ NUEVA LIBRERÍA IMPORTADA
 import re  # ✅ IMPORTACIÓN NUEVA PARA USAR expresiones regulares
 from nltk.tokenize import sent_tokenize
 from nltk import download 
+from dotenv import load_dotenv
+
+load_dotenv()
 # ----------------------------
 # CONFIGURACIONES GENERALES
 # ----------------------------
@@ -18,14 +21,14 @@ CORS(app, supports_credentials=True)
 # ----------------------------
 # CONEXIÓN A LA BASE DE DATOS
 # ----------------------------
-conn = mysql.connector.connect(
-    host="localhost",
-    user="root",
-    password="",
-    database="chatbot_utmach"
+db = mysql.connector.connect(
+    host=os.getenv("DB_HOST"),
+    port=int(os.getenv("DB_PORT")),
+    user=os.getenv("DB_USER"),
+    password=os.getenv("DB_PASSWORD"),
+    database=os.getenv("DB_DATABASE")
 )
-cursor = conn.cursor()
-
+cursor = db.cursor()
 # ----------------------------
 # CONFIGURACIÓN DE API KEYS
 # ---------------------------

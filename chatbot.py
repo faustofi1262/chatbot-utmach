@@ -4,7 +4,7 @@ import openai
 from pinecone import Pinecone, ServerlessSpec
 import mysql.connector
 import os
-
+from dotenv import load_dotenv
 # Configurar OpenAI
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
@@ -31,13 +31,15 @@ else:
 index = pc.Index(INDEX_NAME)
 
 # Conectar a la base de datos
-conn = mysql.connector.connect(
-    host="localhost",
-    user="root",
-    password="",
-    database="chatbot_utmach"
+load_dotenv()
+db = mysql.connector.connect(
+    host=os.getenv("DB_HOST"),
+    port=int(os.getenv("DB_PORT")),
+    user=os.getenv("DB_USER"),
+    password=os.getenv("DB_PASSWORD"),
+    database=os.getenv("DB_DATABASE")
 )
-cursor = conn.cursor()
+cursor = db.cursor()
 
 # Flask app
 app = Flask(__name__)
