@@ -1,3 +1,12 @@
+# Ignorar bases de datos y uploads
+documentos.db
+upload/
+*.db
+
+# Ignorar variables de entorno
 .env
+
+# Ignorar archivos de sistema
 __pycache__/
 *.pyc
+.DS_Store
