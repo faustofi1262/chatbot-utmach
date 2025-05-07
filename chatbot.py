@@ -1,20 +1,29 @@
+# chatbot.py actualizado y corregido
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import openai
 from pinecone import Pinecone, ServerlessSpec
-import mysql.connector
+import psycopg2
 import os
 from dotenv import load_dotenv
+
+# ----------------------------
+# Cargar variables de entorno
+# ----------------------------
+load_dotenv()
+
+# ----------------------------
 # Configurar OpenAI
+# ----------------------------
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
+# ----------------------------
 # Configurar Pinecone
+# ----------------------------
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
-INDEX_NAME = os.getenv("INDEX_NAME")  # Mejor también cargar el nombre del índice
+INDEX_NAME = os.getenv("INDEX_NAME")
 
 pc = Pinecone(api_key=PINECONE_API_KEY)
-index = pc.Index(INDEX_NAME)
-INDEX_NAME = "chatbot-utmach"
 
 # Verificar si el índice existe
 if INDEX_NAME not in pc.list_indexes().names():
@@ -30,22 +39,27 @@ else:
 
 index = pc.Index(INDEX_NAME)
 
-# Conectar a la base de datos
-load_dotenv()
-db = mysql.connector.connect(
+# ----------------------------
+# Conectar a la base de datos PostgreSQL
+# ----------------------------
+db = psycopg2.connect(
     host=os.getenv("DB_HOST"),
-    port=int(os.getenv("DB_PORT")),
+    port=os.getenv("DB_PORT"),
     user=os.getenv("DB_USER"),
     password=os.getenv("DB_PASSWORD"),
-    database=os.getenv("DB_DATABASE")
+    dbname=os.getenv("DB_DATABASE")
 )
 cursor = db.cursor()
 
-# Flask app
+# ----------------------------
+# Crear la app Flask
+# ----------------------------
 app = Flask(__name__)
 CORS(app)
 
-# Obtener embeddings
+# ----------------------------
+# Función para obtener embeddings
+# ----------------------------
 def get_embedding(text):
     response = openai.Embedding.create(
         input=text,
@@ -53,30 +67,30 @@ def get_embedding(text):
     )
     return response['data'][0]['embedding']
 
-# Buscar en Pinecone con filtro mejorado
+# ----------------------------
+# Buscar en Pinecone
+# ----------------------------
 def search_pinecone(query, user_id):
     try:
         query_embedding = get_embedding(query)
-        
-        # Aumentar top_k a 5 para traer más resultados
+
         result = index.query(
             vector=query_embedding,
-            top_k=5,
+            top_k=5,  # Puedes ajustar top_k
             include_metadata=True,
             namespace="pdf_files"
         )
-        
+
         matches = result.get("matches", [])
         responses = [match['metadata']['response'] for match in matches]
         return responses
     except Exception as e:
-        print(f"❌ Error en Pinecone: {str(e)}")
+        print(f"❌ Error al buscar en Pinecone: {str(e)}")
         return []
 
-# Contexto general
-
-conversation_histories = {}
-
+# ----------------------------
+# Endpoint de Chat
+# ----------------------------
 @app.route("/chat", methods=["POST"])
 def chat():
     data = request.get_json()
@@ -86,17 +100,16 @@ def chat():
     if not user_message:
         return jsonify({"response": "No se recibió ningún mensaje."}), 400
 
-    # 1. Buscar en Pinecone
+    # 1. Buscar primero en Pinecone
     context = search_pinecone(user_message, user_id)
 
-    # 2. Si no se encuentra respuesta relevante, ir a OpenAI
-    # Generar respuesta con OpenAI usando el contexto encontrado
+    # 2. Preparar el contexto y preguntar a OpenAI
     try:
         messages = [{"role": "system", "content": "Eres un asistente experto en el proceso de admisión de la UTMACH."}]
         if context:
             for fragment in context:
                 messages.append({"role": "user", "content": fragment})
-        
+
         messages.append({"role": "user", "content": user_message})
 
         response = openai.ChatCompletion.create(
@@ -107,18 +120,22 @@ def chat():
 
     except Exception as e:
         bot_response = f"❌ Error al conectar con OpenAI: {str(e)}"
-
         return jsonify({"response": bot_response})
 
-    # Guardar conversación en MySQL
+    # 3. Guardar conversación en PostgreSQL
     try:
-        cursor.execute("INSERT INTO conversaciones (user_id, pregunta, respuesta) VALUES (%s, %s, %s)",
-                       (user_id, user_message, bot_response))
-        conn.commit()
+        cursor.execute(
+            "INSERT INTO conversaciones (user_id, pregunta, respuesta) VALUES (%s, %s, %s)",
+            (user_id, user_message, bot_response)
+        )
+        db.commit()
     except Exception as db_error:
-        print(f"⚠️ Error al guardar conversación en la base de datos: {str(db_error)}")
+        print(f"⚠️ Error al guardar conversación en base de datos: {str(db_error)}")
 
     return jsonify({"response": bot_response})
 
+# ----------------------------
+# Ejecutar la app
+# ----------------------------
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8082, debug=True)

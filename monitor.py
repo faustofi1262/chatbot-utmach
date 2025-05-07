@@ -1,11 +1,12 @@
-# monitor.py actualizado y corregido
+# monitor.py actualizado y corregido para Render con PostgreSQL
 from flask import Flask, render_template, redirect, session, url_for, jsonify, request, send_from_directory
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
 import subprocess
-import mysql.connector
 from datetime import datetime, timedelta
 import os
+import psycopg2
+from dotenv import load_dotenv
 
 app = Flask(__name__)
 app.secret_key = 'clave-secreta'
@@ -18,14 +19,15 @@ MAIN_PATH = 'main.py'
 processes = {}
 
 # Conexión a la base de datos
-conn = mysql.connector.connect(
+load_dotenv()
+db = psycopg2.connect(
     host=os.getenv("DB_HOST"),
+    port=os.getenv("DB_PORT"),
     user=os.getenv("DB_USER"),
     password=os.getenv("DB_PASSWORD"),
-    database=os.getenv("DB_DATABASE"),
-    port=int(os.getenv("DB_PORT"))
+    dbname=os.getenv("DB_DATABASE")
 )
-cursor = conn.cursor()
+cursor = db.cursor()
 
 # Ejecutar main.py
 @app.route("/ejecutar_main", methods=["POST"])
@@ -67,19 +69,19 @@ def obtener_metricas():
         hace_una_semana = hoy - timedelta(days=7)
         hace_un_mes = hoy - timedelta(days=30)
 
-        cursor = conn.cursor()
+        cur = db.cursor()
 
-        cursor.execute("SELECT COUNT(*) FROM conversaciones WHERE DATE(fecha) = %s", (hoy,))
-        consultas_dia = cursor.fetchone()[0]
+        cur.execute("SELECT COUNT(*) FROM conversaciones WHERE DATE(fecha) = %s", (hoy,))
+        consultas_dia = cur.fetchone()[0]
 
-        cursor.execute("SELECT COUNT(*) FROM conversaciones WHERE DATE(fecha) >= %s", (hace_una_semana,))
-        consultas_semana = cursor.fetchone()[0]
+        cur.execute("SELECT COUNT(*) FROM conversaciones WHERE DATE(fecha) >= %s", (hace_una_semana,))
+        consultas_semana = cur.fetchone()[0]
 
-        cursor.execute("SELECT COUNT(*) FROM conversaciones WHERE DATE(fecha) >= %s", (hace_un_mes,))
-        consultas_mes = cursor.fetchone()[0]
+        cur.execute("SELECT COUNT(*) FROM conversaciones WHERE DATE(fecha) >= %s", (hace_un_mes,))
+        consultas_mes = cur.fetchone()[0]
 
-        cursor.execute("SELECT COUNT(DISTINCT user_id) FROM conversaciones")
-        ids_unicas = cursor.fetchone()[0]
+        cur.execute("SELECT COUNT(DISTINCT user_id) FROM conversaciones")
+        ids_unicas = cur.fetchone()[0]
 
         return jsonify({
             "consultas_dia": consultas_dia,
@@ -105,16 +107,17 @@ def procesar_login():
     if not username or not password:
         return jsonify({"error": "Usuario y contraseña requeridos"}), 400
 
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM usuarios WHERE username = %s", (username,))
-    user = cursor.fetchone()
+    cur = db.cursor()
+    cur.execute("SELECT * FROM usuarios WHERE username = %s", (username,))
+    user = cur.fetchone()
 
-    if user and check_password_hash(user["password"], password):
-        session["username"] = user["username"]
-        session["rol"] = user["rol"]
+    if user and check_password_hash(user[2], password):  # Ajustado para PostgreSQL (sin dictionary=True)
+        session["username"] = user[1]  # username
+        session["rol"] = user[3]       # rol
         return jsonify({"message": "✅ Login exitoso"})
     else:
         return jsonify({"error": "Usuario o contraseña incorrectos"}), 401
+
 # Logout
 @app.route("/logout")
 def logout():
@@ -137,18 +140,17 @@ def registrar_usuario():
         data = request.json
         username = data.get("username")
         password = data.get("password")
-        rol = data.get("rol", "usuario")  
+        rol = data.get("rol", "usuario")
         if not username or not password:
             return jsonify({"error": "Usuario y contraseña requeridos"}), 400
 
         hashed = generate_password_hash(password)
-        cursor.execute("INSERT INTO usuarios (username, password, rol) VALUES (%s, %s, %s)", (username, hashed, 'usuario'))
-        conn.commit()
+        cur = db.cursor()
+        cur.execute("INSERT INTO usuarios (username, password, rol) VALUES (%s, %s, %s)", (username, hashed, rol))
+        db.commit()
         return jsonify({"message": "✅ Usuario registrado correctamente"})
     except Exception as e:
         return jsonify({"error": f"❌ Error al registrar usuario: {str(e)}"}), 500
-    
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=8083, debug=False)
-
