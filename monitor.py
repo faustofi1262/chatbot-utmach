@@ -1,6 +1,5 @@
 # monitor.py actualizado y corregido para Render con PostgreSQL
 from flask import Flask, render_template, redirect, session, url_for, jsonify, request, send_from_directory
-from your_database_models_file import Usuario  # Replace 'your_database_models_file' with the actual file name where Usuario is defined
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
 import subprocess
@@ -12,23 +11,6 @@ from dotenv import load_dotenv
 app = Flask(__name__)
 app.secret_key = 'clave-secreta'
 CORS(app, supports_credentials=True)
-@app.route('/crear_admin')
-def crear_admin():
-    # Verifica si ya existe un admin
-    existe_admin = Usuario.query.filter_by(username='admin').first()
-    if existe_admin:
-        return "El usuario admin ya existe."
-
-    # Crear nuevo usuario
-    nuevo_usuario = Usuario(
-        username='admin',
-        password='admin',  # Luego debes cambiar o encriptar esta contraseña
-        rol='admin'
-    )
-    db.session.add(nuevo_usuario)
-    db.session.commit()
-    
-    return "✅ Usuario admin creado correctamente."
 
 # Rutas de los archivos a ejecutar
 MAIN_PATH = 'main.py'
