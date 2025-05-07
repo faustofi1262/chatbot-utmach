@@ -11,6 +11,23 @@ from dotenv import load_dotenv
 app = Flask(__name__)
 app.secret_key = 'clave-secreta'
 CORS(app, supports_credentials=True)
+@app.route('/crear_admin')
+def crear_admin():
+    # Verifica si ya existe un admin
+    existe_admin = Usuario.query.filter_by(username='admin').first()
+    if existe_admin:
+        return "El usuario admin ya existe."
+
+    # Crear nuevo usuario
+    nuevo_usuario = Usuario(
+        username='admin',
+        password='admin',  # Luego debes cambiar o encriptar esta contraseña
+        rol='admin'
+    )
+    db.session.add(nuevo_usuario)
+    db.session.commit()
+    
+    return "✅ Usuario admin creado correctamente."
 
 # Rutas de los archivos a ejecutar
 MAIN_PATH = 'main.py'
