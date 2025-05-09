@@ -237,6 +237,19 @@ def limpiar_pinecone():
         return jsonify({"message": "✅ Todos los datos en Pinecone, la base de datos y la carpeta upload han sido eliminados correctamente."})
     except Exception as e:
         return jsonify({"error": f"❌ Error al limpiar Pinecone: {str(e)}"}), 500
+@app.route("/login", methods=["POST"])
+def login():
+    data = request.get_json()
+    username = data.get("username")
+    password = data.get("password")
+
+    cursor.execute("SELECT password FROM usuarios WHERE username = %s", (username,))
+    resultado = cursor.fetchone()
+
+    if resultado and resultado[0] == password:
+        return jsonify({"message": "Login exitoso"}), 200
+    else:
+        return jsonify({"error": "Usuario o contraseña incorrectos"}), 401
 
 if __name__ == "__main__":
     print("📌 Vectores en Pinecone:", index.describe_index_stats())
