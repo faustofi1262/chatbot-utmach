@@ -22,11 +22,11 @@ CORS(app, supports_credentials=True)
 # ----------------------------
 load_dotenv()
 db = psycopg2.connect(
-    host=os.getenv("DB_HOST"),
-    port=os.getenv("DB_PORT"),
-    user=os.getenv("DB_USER"),
-    password=os.getenv("DB_PASSWORD"),
-    dbname=os.getenv("DB_DATABASE")
+    host="dpg-d0cmqv3e5dus73ahtvi0-a.ohio-postgres.render.com",
+    port=5432,
+    user="chatbot_utmach_db_user",
+    password="OtqdjEoPWs6Nmju61FtNuxKKHewZUm0K",
+    dbname="chatbot_utmach_db"
     sslmode='require'  # 🔐 Añade esta línea
 )
 cursor = db.cursor()
