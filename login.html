@@ -39,11 +39,13 @@
     button:hover {
       background: #0056b3;
     }
+    #mensaje {
+      color: red;
+      font-weight: bold;
+      margin-top: 10px;
+    }
   </style>
 </head>
-<script>
-  const BASE_URL = "https://chatbot-utmach.onrender.com";
-</script>
 
 <body>
   <div class="login-box">
@@ -51,27 +53,34 @@
     <input type="text" id="username" placeholder="Usuario"><br>
     <input type="password" id="password" placeholder="Contraseña"><br>
     <button onclick="login()">Ingresar</button>
-    <p id="mensaje" style="color: red; font-weight: bold;"></p>
+    <p id="mensaje"></p>
   </div>
+
   <script>
+    const BASE_URL = "https://chatbot-utmach.onrender.com";  // Asegura usar la URL correcta del backend
+
     async function login() {
       const user = document.getElementById('username').value;
       const pass = document.getElementById('password').value;
-  
-      const res = await fetch(BASE_URL + "/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: user, password: pass })
-      });
-  
-      const data = await res.json();
-  
-      if (res.ok) {
-        window.location.href = "/monitor";
-      } else {
-        document.getElementById("mensaje").textContent = data.error || "Error al iniciar sesión.";
+
+      try {
+        const res = await fetch(BASE_URL + "/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: user, password: pass })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          window.location.href = "/monitor";  // cambia si tienes otra ruta
+        } else {
+          document.getElementById("mensaje").textContent = data.error || "Error al iniciar sesión.";
+        }
+      } catch (e) {
+        document.getElementById("mensaje").textContent = "❌ No se pudo conectar con el backend.";
       }
     }
   </script>
-    </body>
+</body>
 </html>
