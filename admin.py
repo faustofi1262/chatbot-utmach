@@ -245,7 +245,6 @@ def login():
         username = data.get("username")
         password = data.get("password")
 
-        print("🟡 JSON recibido:", data)
         print("🔵 Usuario recibido:", username)
         print("🟠 Contraseña recibida:", password)
 
@@ -268,6 +267,9 @@ def login():
 @app.route("/debug", methods=["GET"])
 def debug():
     return jsonify({"status": "API activa"}), 200
+@app.route("/ping", methods=["GET"])
+def ping():
+    return jsonify({"message": "Backend activo"}), 200
 
 if __name__ == "__main__":
     print("📌 Vectores en Pinecone:", index.describe_index_stats())
