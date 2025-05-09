@@ -273,4 +273,4 @@ def ping():
 
 if __name__ == "__main__":
     print("📌 Vectores en Pinecone:", index.describe_index_stats())
-    app.run(host="0.0.0.0", port=8081, debug=True)
+    app.run(host="0.0.0.0", port=10000, debug=True)
