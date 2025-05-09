@@ -245,20 +245,25 @@ def login():
         username = data.get("username")
         password = data.get("password")
 
-        print("🟡 Recibido:", data)
-        print("🔵 Usuario:", username)
-        print("🟠 Clave:", password)
+        print("🟡 JSON recibido:", data)
+        print("🔵 Usuario recibido:", username)
+        print("🟠 Contraseña recibida:", password)
 
         cursor.execute("SELECT password FROM usuarios WHERE username = %s", (username,))
         resultado = cursor.fetchone()
-        print("🟣 Resultado en DB:", resultado)
+
+        print("🟣 Resultado en base de datos:", resultado)
 
         if resultado and resultado[0] == password:
+            print("✅ Coincidencia encontrada. Acceso permitido.")
             return jsonify({"message": "Login exitoso"}), 200
         else:
+            print("❌ No coincide la contraseña o usuario.")
             return jsonify({"error": "Usuario o contraseña incorrectos"}), 401
     except Exception as e:
-        return jsonify({"error": f"Error en la autenticación: {str(e)}"}), 500    
+        print(f"🔥 ERROR en backend: {str(e)}")
+        return jsonify({"error": f"Error en la autenticación: {str(e)}"}), 500
+
 
 @app.route("/debug", methods=["GET"])
 def debug():
