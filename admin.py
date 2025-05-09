@@ -20,7 +20,7 @@ CORS(app, supports_credentials=True)
 # ----------------------------
 # CONEXIÓN A LA BASE DE DATOS
 # ----------------------------
-load_dotenv()
+
 db = psycopg2.connect(
     host="dpg-d0cmqv3e5dus73ahtvi0-a.ohio-postgres.render.com",
     port=5432,
