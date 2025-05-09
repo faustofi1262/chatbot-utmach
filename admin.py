@@ -254,6 +254,9 @@ def login():
             return jsonify({"error": "Usuario o contraseña incorrectos"}), 401
     except Exception as e:
             return jsonify({"error": f"Error en la autenticación: {str(e)}"}), 500
+@app.route("/debug", methods=["GET"])
+def debug():
+    return jsonify({"status": "API activa"}), 200
 
 if __name__ == "__main__":
     print("📌 Vectores en Pinecone:", index.describe_index_stats())
