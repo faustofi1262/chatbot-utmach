@@ -237,7 +237,6 @@ def limpiar_pinecone():
         return jsonify({"message": "✅ Todos los datos en Pinecone, la base de datos y la carpeta upload han sido eliminados correctamente."})
     except Exception as e:
         return jsonify({"error": f"❌ Error al limpiar Pinecone: {str(e)}"}), 500
-    
 @app.route("/login", methods=["POST"])
 def login():
     try:
@@ -245,15 +244,21 @@ def login():
         username = data.get("username")
         password = data.get("password")
 
+        print("🟡 Recibido:", data)
+        print("🔵 Usuario:", username)
+        print("🟠 Clave:", password)
+
         cursor.execute("SELECT password FROM usuarios WHERE username = %s", (username,))
         resultado = cursor.fetchone()
+        print("🟣 Resultado en DB:", resultado)
 
         if resultado and resultado[0] == password:
             return jsonify({"message": "Login exitoso"}), 200
         else:
             return jsonify({"error": "Usuario o contraseña incorrectos"}), 401
     except Exception as e:
-            return jsonify({"error": f"Error en la autenticación: {str(e)}"}), 500
+        return jsonify({"error": f"Error en la autenticación: {str(e)}"}), 500    
+
 @app.route("/debug", methods=["GET"])
 def debug():
     return jsonify({"status": "API activa"}), 200
