@@ -26,7 +26,7 @@ db = psycopg2.connect(
     port=5432,
     user="chatbot_utmach_db_user",
     password="OtqdjEoPWs6Nmju61FtNuxKKHewZUm0K",
-    dbname="chatbot_utmach_db"
+    dbname="chatbot_utmach_db",
     sslmode='require'  # 🔐 Añade esta línea
 )
 cursor = db.cursor()
@@ -238,30 +238,6 @@ def limpiar_pinecone():
         return jsonify({"message": "✅ Todos los datos en Pinecone, la base de datos y la carpeta upload han sido eliminados correctamente."})
     except Exception as e:
         return jsonify({"error": f"❌ Error al limpiar Pinecone: {str(e)}"}), 500
-@app.route("/login", methods=["POST"])
-def login():
-    try:
-        data = request.get_json()
-        username = data.get("username")
-        password = data.get("password")
-
-        print("🔵 Usuario recibido:", username)
-        print("🟠 Contraseña recibida:", password)
-
-        cursor.execute("SELECT password FROM usuarios WHERE username = %s", (username,))
-        resultado = cursor.fetchone()
-
-        print("🟣 Resultado en base de datos:", resultado)
-
-        if resultado and resultado[0] == password:
-            print("✅ Coincidencia encontrada. Acceso permitido.")
-            return jsonify({"message": "Login exitoso"}), 200
-        else:
-            print("❌ No coincide la contraseña o usuario.")
-            return jsonify({"error": "Usuario o contraseña incorrectos"}), 401
-    except Exception as e:
-        print(f"🔥 ERROR en backend: {str(e)}")
-        return jsonify({"error": f"Error en la autenticación: {str(e)}"}), 500
 @app.route("/login", methods=["POST"])
 def login():
     try:
