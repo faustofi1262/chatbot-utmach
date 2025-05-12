@@ -242,19 +242,21 @@ def limpiar_pinecone():
 def login():
     try:
         data = request.get_json()
-        username = data.get("username")
-        password = data.get("password")
+        username = data.get("username").strip()
+        password = data.get("password").strip()
 
         print("🔵 Usuario recibido:", username)
         print("🟠 Contraseña recibida:", password)
-        print("✅ Coincidencia encontrada. Acceso permitido.")
 
         cursor.execute("SELECT password FROM usuarios WHERE username = %s", (username,))
         resultado = cursor.fetchone()
 
         print("🟣 Resultado en base de datos:", resultado)
 
-        if resultado and resultado[0] == password:
+        if resultado:
+            print("🔒 Comparando:", resultado[0], "vs", password)
+        
+        if resultado and resultado[0].strip() == password:
             print("✅ Coincidencia encontrada. Acceso permitido.")
             return jsonify({"message": "Login exitoso"}), 200
         else:
@@ -263,6 +265,7 @@ def login():
     except Exception as e:
         print(f"🔥 ERROR en backend: {str(e)}")
         return jsonify({"error": f"Error en la autenticación: {str(e)}"}), 500
+
 
 
 @app.route("/debug", methods=["GET"])
