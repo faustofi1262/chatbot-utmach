@@ -1,3 +1,4 @@
+{% raw %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -17,7 +18,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 20px;
+    gap: 20px;
     }
 
     header img {
@@ -43,27 +44,61 @@
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
 
-    input, select {
+    .registro input {
       width: 100%;
-      padding: 10px;
+      padding: 8px;
       margin: 10px 0;
       border: 1px solid #ccc;
       border-radius: 5px;
     }
 
-    button {
+    .registro button {
+      background-color: #007bff;
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
       width: 100%;
-      padding: 12px;
-      background-color: #0066cc;
+    }
+
+    .registro button:hover {
+      background-color: #0056b3;
+    }
+
+    .boton-chatbot {
+      padding: 15px;
+      margin: 10px 0;
+      font-size: 16px;
+      width: 100%;
       color: white;
       border: none;
       border-radius: 5px;
       cursor: pointer;
-      font-size: 16px;
     }
 
-    button:hover {
-      background-color: #004080;
+    .iniciar {
+      background-color: #003366;
+    }
+
+    .iniciar:hover {
+      background-color: #0059b3;
+    }
+
+    .detener {
+      background-color: #cc0000;
+    }
+
+    .detener:hover {
+      background-color: #990000;
+    }
+
+    .logout-btn {
+      background-color: #a80000;
+    }
+
+    .logout-btn:hover {
+      background-color: #800000;
     }
 
     .metricas {
@@ -84,114 +119,201 @@
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+<script>
+  const BASE_URL = window.location.origin;
+</script>
 <body>
   <header>
-    <img src="logo.png" alt="Logo UTMACH" />
-    <h1>Sistema de Monitoreo y Administración del Chatbot UTMACH</h1>
-  </header>
+    <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo UTMACH" />
+        <h1>Sistema de Monitoreo y Administración del Chatbot UTMACH</h1>
+    </header>
 
   <div class="contenedor">
     <div class="registro">
       <h2>Registrar Nuevo Usuario</h2>
-      <input type="text" id="nuevo_usuario" placeholder="Usuario">
-      <input type="password" id="nuevo_password" placeholder="Contraseña">
-      <select id="nuevo_rol">
-        <option value="usuario">Usuario</option>
-        <option value="admin">Administrador</option>
-      </select>
-      <button onclick="registrarUsuario()">Registrar</button>
-      <p id="mensaje_registro"></p>
+    <input type="text" id="nuevo_usuario" placeholder="Nuevo usuario">
+    <input type="password" id="nuevo_password" placeholder="Contraseña">
+    <select id="nuevo_rol">
+      <option value="usuario" selected>Usuario</option>
+      <option value="admin">Administrador</option>
+    </select>
+    <button onclick="registrarUsuario()">Registrar</button>
+    <p id="mensaje_registro" style="color: green;"></p>
+
     </div>
 
     <div class="acciones">
-      <button onclick="window.location.href='/logout'">Cerrar sesión</button>
-      <button onclick="toggleChatbot()">Ejecutar Chatbot</button>
-      <button onclick="window.location.href='/admin.html'">Administración</button>
-      <button onclick="exportarCSV()">Exportar métricas a CSV</button>
+      <button onclick="window.location.href = BASE_URL + '/logout'">Cerrar sesión</button>
+      <button id="btn-main" class="boton-chatbot iniciar" onclick="toggleMain()">Ejecutar Chatbot</button>
+      <button class="boton-chatbot" style="background-color: #17a2b8;" onclick="exportarCSV()">Exportar métricas a CSV</button>
       <div class="resultado" id="resultado"></div>
     </div>
   </div>
-
+ 
+  </div>
   <div class="metricas">
-    <h2>📊 Métricas de uso</h2>
-    <p id="error_metricas" style="color:red"></p>
-    <canvas id="graficoConsultas" width="400" height="200"></canvas>
+    <h2 style="text-align:center;">📊 Métricas de uso</h2>
+    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; text-align: center;">
+      <div>
+        <div style="font-size: 40px;">📅</div>
+        <div>Consultas hoy</div>
+        <div style="font-size: 24px; font-weight: bold;" id="consultas_dia">0</div>
+      </div>
+      <div>
+        <div style="font-size: 40px;">🗓️</div>
+        <div>Consultas esta semana</div>
+        <div style="font-size: 24px; font-weight: bold;" id="consultas_semana">0</div>
+      </div>
+      <div>
+        <div style="font-size: 40px;">📆</div>
+        <div>Consultas este mes</div>
+        <div style="font-size: 24px; font-weight: bold;" id="consultas_mes">0</div>
+      </div>
+      <div>
+        <div style="font-size: 40px;">🧑‍💼</div>
+        <div>Usuarios únicos</div>
+        <div style="font-size: 24px; font-weight: bold;" id="ids_unicas">0</div>
+      </div>
+    </div>
+  </div>
+  <div style="max-width: 600px; margin: 40px auto;">
+    <canvas id="graficoConsultas"></canvas>
   </div>
 
-<script>
-const BASE_URL = window.location.origin;
-let ejecutando = false;
-let grafico = null;
+  <script>
+    let ejecutando = false;
 
-async function registrarUsuario() {
+    async function toggleMain() {
+      const boton = document.getElementById("btn-main");
+      const url = ejecutando ? "/detener_main" : "/ejecutar_main";
+
+      try {
+        const response = await fetch(url, { method: "POST" });
+        const data = await response.json();
+        document.getElementById("resultado").textContent = data.message || data.error;
+
+        if (response.ok) {
+          ejecutando = !ejecutando;
+          boton.textContent = ejecutando ? "Detener Chatbot" : "Ejecutar Chatbot";
+          boton.className = ejecutando ? "boton-chatbot detener" : "boton-chatbot iniciar";
+        }
+      } catch (error) {
+        alert("❌ Error al conectar con el servidor.");
+      }
+    }
+    let miGrafico = null;
+
+  async function cargarMetricas() {
+    try {
+      const res = await fetch('/metricas');
+      const data = await res.json();
+
+      if (data.error) {
+        document.querySelector(".metricas").textContent = "Error al cargar métricas.";
+        return;
+      }
+
+      // Asignar valores al DOM
+      document.getElementById("consultas_dia").textContent = data.consultas_dia;
+      document.getElementById("consultas_semana").textContent = data.consultas_semana;
+      document.getElementById("consultas_mes").textContent = data.consultas_mes;
+      document.getElementById("ids_unicas").textContent = data.ids_unicas;
+
+      // Cargar gráfico de barras
+      const ctx = document.getElementById('graficoConsultas').getContext('2d');
+
+      if (miGrafico) {
+        miGrafico.destroy(); // Evita múltiples instancias
+      }
+
+      miGrafico = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Hoy', 'Semana', 'Mes'],
+          datasets: [{
+            label: 'Consultas',
+            data: [
+              data.consultas_dia,
+              data.consultas_semana,
+              data.consultas_mes
+            ],
+            backgroundColor: ['#007bff', '#28a745', '#ffc107']
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false },
+            title: {
+              display: true,
+              text: 'Resumen de consultas'
+            }
+          },
+          scales: {
+            y: { beginAtZero: true }
+          }
+        }
+      });
+    } catch (error) {
+      document.querySelector(".metricas").textContent = "Error al cargar métricas.";
+    }
+  }
+   
+
+    async function registrarUsuario() {
   const user = document.getElementById("nuevo_usuario").value;
   const pass = document.getElementById("nuevo_password").value;
   const rol = document.getElementById("nuevo_rol").value;
+
+  if (!user || !pass || !rol) {
+    document.getElementById("mensaje_registro").textContent = "Completa todos los campos.";
+    return;
+  }
 
   try {
     const res = await fetch(BASE_URL + "/registrar_usuario", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: user, password: pass, rol })
+      body: JSON.stringify({ username: user, password: pass, rol: rol })
     });
+
     const data = await res.json();
     document.getElementById("mensaje_registro").textContent = data.message || data.error;
-  } catch (e) {
-    document.getElementById("mensaje_registro").textContent = "Error al conectar con el servidor.";
-  }
-}
-
-async function toggleChatbot() {
-  const url = ejecutando ? "/detener_chatbot" : "/ejecutar_chatbot";
-  try {
-    const res = await fetch(BASE_URL + url, { method: "POST" });
-    const data = await res.json();
-    document.getElementById("resultado").textContent = data.message || data.error;
-    ejecutando = !ejecutando;
   } catch (err) {
-    document.getElementById("resultado").textContent = "No se pudo conectar al servidor.";
+    document.getElementById("mensaje_registro").textContent = "❌ Error al registrar usuario.";
   }
 }
+  
+    function logout() {
+      window.location.href = "/logout";
+    }
+    function exportarCSV() {
+  const hoy = document.getElementById("consultas_dia").textContent;
+  const semana = document.getElementById("consultas_semana").textContent;
+  const mes = document.getElementById("consultas_mes").textContent;
+  const usuarios = document.getElementById("ids_unicas").textContent;
 
-async function cargarMetricas() {
-  try {
-    const res = await fetch(BASE_URL + "/metricas");
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
+  const filas = [
+    ["Métrica", "Cantidad"],
+    ["Consultas hoy", hoy],
+    ["Consultas esta semana", semana],
+    ["Consultas este mes", mes],
+    ["Usuarios únicos", usuarios]
+  ];
 
-    const ctx = document.getElementById('graficoConsultas').getContext('2d');
-    if (grafico) grafico.destroy();
-    grafico = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: ['Hoy', 'Semana', 'Mes'],
-        datasets: [{
-          label: 'Consultas',
-          data: [data.consultas_dia, data.consultas_semana, data.consultas_mes],
-          backgroundColor: ['#007bff', '#28a745', '#ffc107']
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: { legend: { display: false } },
-        scales: { y: { beginAtZero: true } }
-      }
-    });
-  } catch (error) {
-    document.getElementById("error_metricas").textContent = "Error al cargar métricas.";
-  }
+  let csvContent = "data:text/csv;charset=utf-8," 
+    + filas.map(fila => fila.join(",")).join("\n");
+
+  const enlace = document.createElement("a");
+  enlace.setAttribute("href", encodeURI(csvContent));
+  enlace.setAttribute("download", "metricas_chatbot.csv");
+  document.body.appendChild(enlace);
+  enlace.click();
+  document.body.removeChild(enlace);
 }
 
-function exportarCSV() {
-  const csv = "Consultas Hoy,Consultas Semana,Consultas Mes\n" +
-              document.getElementById("graficoConsultas").toDataURL();
-  const a = document.createElement("a");
-  a.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
-  a.download = "metricas_chatbot.csv";
-  a.click();
-}
-
-cargarMetricas();
-</script>
+    cargarMetricas();
+  </script>
 </body>
 </html>
+{% endraw %}
