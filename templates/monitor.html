@@ -1,3 +1,4 @@
+{% raw %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -123,7 +124,7 @@
 </script>
 <body>
   <header>
-    <img src="logo.png" alt=" " style="height: 60px; margin-right: 15px;" />
+    <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo UTMACH" />
         <h1>Sistema de Monitoreo y Administración del Chatbot UTMACH</h1>
     </header>
 
@@ -315,3 +316,4 @@
   </script>
 </body>
 </html>
+{% endraw %}
