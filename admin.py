@@ -1,3 +1,5 @@
+print("🔥 admin.py fue cargado exitosamente")
+# -----------------------------
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import pdfplumber
@@ -266,8 +268,6 @@ def login():
         print(f"🔥 ERROR en backend: {str(e)}")
         return jsonify({"error": f"Error en la autenticación: {str(e)}"}), 500
 
-
-
 @app.route("/debug", methods=["GET"])
 def debug():
     return jsonify({"status": "API activa"}), 200
@@ -279,7 +279,6 @@ def testprint():
     print("🔥 Este print viene de admin.py")
     return jsonify({"message": "Test ejecutado"}), 200
 
-
+print("📌 Vectores en Pinecone:", index.describe_index_stats())
 if __name__ == "__main__":
-    print("📌 Vectores en Pinecone:", index.describe_index_stats())
-    app.run(host="0.0.0.0", port=10000, debug=True)
+    app.run(host="0.0.0.0", port=10000)
