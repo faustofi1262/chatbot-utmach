@@ -271,6 +271,11 @@ def debug():
 @app.route("/ping", methods=["GET"])
 def ping():
     return jsonify({"message": "Backend activo"}), 200
+@app.route("/testprint")
+def testprint():
+    print("🔥 Este print viene de admin.py")
+    return jsonify({"message": "Test ejecutado"}), 200
+
 
 if __name__ == "__main__":
     print("📌 Vectores en Pinecone:", index.describe_index_stats())
