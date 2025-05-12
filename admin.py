@@ -11,7 +11,8 @@ from nltk import download
 import os
 import psycopg2
 from dotenv import load_dotenv
-
+from flask import Flask, request, jsonify, render_template
+from flask_cors import CORS
 # ----------------------------
 # CONFIGURACIONES GENERALES
 # ----------------------------
@@ -38,7 +39,48 @@ cursor = db.cursor()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 INDEX_NAME = os.getenv("INDEX_NAME")
+# ----------------------------
+# CONFIGURACIÓN CHATBOT PARA LANZAE DESDE RENDER
+# ----------------------------
+# Estado interno del chatbot
+chatbot_activo = False
 
+@app.route("/ejecutar_chatbot", methods=["POST"])
+def ejecutar_chatbot():
+    global chatbot_activo
+    if not chatbot_activo:
+        chatbot_activo = True
+        return jsonify({"message": "🤖 Chatbot iniciado correctamente."})
+    else:
+        return jsonify({"message": "⚠️ El chatbot ya está en ejecución."})
+
+@app.route("/detener_chatbot", methods=["POST"])
+def detener_chatbot():
+    global chatbot_activo
+    if chatbot_activo:
+        chatbot_activo = False
+        return jsonify({"message": "🛑 Chatbot detenido correctamente."})
+    else:
+        return jsonify({"message": "ℹ️ El chatbot ya estaba detenido."})
+
+@app.route("/metricas")
+def metricas():
+    # Aquí puedes conectar tu lógica real en el futuro
+    data = {
+        "consultas_dia": 15,
+        "consultas_semana": 62,
+        "consultas_mes": 220,
+        "ids_unicas": 8
+    }
+    return jsonify(data)
+
+@app.route("/monitor")
+def monitor():
+    return render_template("monitor.html")
+
+@app.route("/")
+def login():
+    return render_template("login.html")
 # ----------------------------
 # CONFIGURACIÓN DE PINECONE
 # ----------------------------
