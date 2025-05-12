@@ -247,6 +247,7 @@ def login():
 
         print("🔵 Usuario recibido:", username)
         print("🟠 Contraseña recibida:", password)
+        print("✅ Coincidencia encontrada. Acceso permitido.")
 
         cursor.execute("SELECT password FROM usuarios WHERE username = %s", (username,))
         resultado = cursor.fetchone()
