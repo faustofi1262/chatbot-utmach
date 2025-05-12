@@ -276,6 +276,11 @@ def ping():
 @app.route("/")
 def mostrar_login():
     return render_template("login.html")
+
+@app.route("/monitor")
+def monitor():
+    return render_template("monitor.html")
+
 print("📌 Vectores en Pinecone:", index.describe_index_stats())
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
