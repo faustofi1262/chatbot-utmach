@@ -57,14 +57,14 @@
   </div>
 
   <script>
-    const BASE_URL = "https://chatbot-utmach.onrender.com";  // ✅ CORREGIDO
+    const BASE_URL = "";  // ✅ CORREGIDO
 
   async function login() {
     const user = document.getElementById('username').value;
     const pass = document.getElementById('password').value;
 
     try {
-      const res = await fetch(BASE_URL + "/login", {
+        fetch("/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: user, password: pass })

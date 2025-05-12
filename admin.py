@@ -1,5 +1,4 @@
-print("🔥 admin.py fue cargado exitosamente")
-# -----------------------------
+from flask import Flask, render_template
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import pdfplumber
@@ -274,11 +273,9 @@ def debug():
 @app.route("/ping", methods=["GET"])
 def ping():
     return jsonify({"message": "Backend activo"}), 200
-@app.route("/testprint")
-def testprint():
-    print("🔥 Este print viene de admin.py")
-    return jsonify({"message": "Test ejecutado"}), 200
-
+@app.route("/")
+def mostrar_login():
+    return render_template("login.html")
 print("📌 Vectores en Pinecone:", index.describe_index_stats())
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
