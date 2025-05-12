@@ -58,13 +58,13 @@
 
   <script>
     const BASE_URL = "";  // ✅ CORREGIDO
-
-  async function login() {
+async function login() {
     const user = document.getElementById('username').value;
     const pass = document.getElementById('password').value;
+    const mensaje = document.getElementById('mensaje');
 
     try {
-        fetch("/login", {
+      const res = await fetch("/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: user, password: pass })
@@ -73,14 +73,22 @@
       const data = await res.json();
 
       if (res.ok) {
-        window.location.href = "/monitor";  // Cambiar si usas otra ruta tras login
+        // ✅ LOGIN EXITOSO
+        mensaje.style.color = "green";
+        mensaje.textContent = "✅ Acceso concedido";
+        window.location.href = "/monitor"; // cambia si usas otra ruta
       } else {
-        document.getElementById("mensaje").textContent = data.error || "Error al iniciar sesión.";
+        // ❌ LOGIN INCORRECTO
+        mensaje.style.color = "red";
+        mensaje.textContent = data.error || "Usuario o contraseña incorrectos.";
       }
     } catch (e) {
-      document.getElementById("mensaje").textContent = "❌ No se pudo conectar con el backend.";
+      // ⚠️ ERROR DE CONEXIÓN
+      mensaje.style.color = "red";
+      mensaje.textContent = "❌ No se pudo conectar con el backend.";
     }
   }
+  
   </script>
 </body>
 </html>
