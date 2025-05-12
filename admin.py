@@ -322,6 +322,27 @@ def mostrar_login():
 @app.route("/monitor")
 def monitor():
     return render_template("monitor.html")
+@app.route("/registrar_usuario", methods=["POST"])
+def registrar_usuario():
+    try:
+        data = request.get_json()
+        username = data.get("username")
+        password = data.get("password")
+        rol = data.get("rol", "usuario")
+
+        if not username or not password:
+            return jsonify({"error": "Todos los campos son obligatorios"}), 400
+
+        cursor.execute("SELECT * FROM usuarios WHERE username = %s", (username,))
+        if cursor.fetchone():
+            return jsonify({"error": "El usuario ya existe"}), 409
+
+        cursor.execute("INSERT INTO usuarios (username, password, rol) VALUES (%s, %s, %s)",
+                       (username, password, rol))
+        db.commit()
+        return jsonify({"message": "✅ Usuario registrado correctamente."}), 201
+    except Exception as e:
+        return jsonify({"error": f"❌ Error al registrar usuario: {str(e)}"}), 500
 
 print("📌 Vectores en Pinecone:", index.describe_index_stats())
 if __name__ == "__main__":
