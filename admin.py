@@ -1,5 +1,4 @@
-from flask import Flask, render_template
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, render_template, request, jsonify, send_from_directory
 from flask_cors import CORS
 import pdfplumber
 import openai
@@ -11,7 +10,7 @@ from nltk import download
 import os
 import psycopg2
 from dotenv import load_dotenv
-
+load_dotenv()
 # ----------------------------
 # CONFIGURACIONES GENERALES
 # ----------------------------
@@ -56,7 +55,7 @@ if index_name not in pc.list_indexes().names():
 else:
     print(f"✅ El índice '{index_name}' ya existe")
 
-index = pc.Index(INDEX_NAME)
+index = pc.Index(index_name)
 
 # Carpeta de carga
 UPLOAD_FOLDER = "./upload"
