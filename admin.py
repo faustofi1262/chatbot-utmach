@@ -2,7 +2,6 @@ from flask import Flask, render_template, request, jsonify, send_from_directory
 from flask_cors import CORS
 import pdfplumber
 import openai
-from openai import OpenAI 
 from pinecone import Pinecone, ServerlessSpec
 import pinecone
 import re
@@ -135,6 +134,7 @@ def entrenar_pdf():
 
         for i, fragmento in enumerate(fragmentos):
             try:
+                from openai import OpenAI
                 client = OpenAI(api_key=openai.api_key)
 
                 response = client.embeddings.create(
