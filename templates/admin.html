@@ -4,7 +4,6 @@
   <script>
     const BASE_URL = window.location.origin;
   </script>
-  <!-- Agregar Chart.js desde CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -104,7 +103,7 @@
     </div>
     <div style="text-align: center; margin-bottom: 20px;">
       <button
-        onclick="window.location.href = 'http://127.0.0.1:8083/monitor'"
+        onclick="window.location.href = BASE_URL + '/monitor'"
         style="background-color: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 8px; font-size: 16px; display: flex; align-items: center; gap: 8px; margin: auto;">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="white" viewBox="0 0 16 16">
           <path fill-rule="evenodd" d="M15 8a.5.5 0 0 1-.5.5H2.707l4.147 4.146a.5.5 0 0 1-.708.708l-5-5a.5.5 0 0 1 0-.708l5-5a.5.5 0 1 1 .708.708L2.707 7.5H14.5A.5.5 0 0 1 15 8z"/>
@@ -152,7 +151,7 @@
   <script>
     async function obtenerDatosPinecone() {
       try {
-        const response = await fetch('http://127.0.0.1:8081/monitorear_pinecone');
+        const response = await fetch(BASE_URL + '/monitorear_pinecone');
         const data = await response.json();
         return data.data;
       } catch (error) {
@@ -173,7 +172,7 @@
 
     function logout() {
       alert("👋 Has cerrado sesión.");
-      window.location.href = "/logout";
+      window.location.href = BASE_URL + "/logout";
     }
 
     function uploadPDF() {
@@ -189,7 +188,7 @@
       const formData = new FormData();
       formData.append("file", fileInput.files[0]);
 
-      fetch("http://127.0.0.1:8081/upload", {
+      fetch(BASE_URL + "/upload", {
         method: "POST",
         body: formData
       })
@@ -213,7 +212,7 @@
     }
 
     function cargarListaArchivos() {
-      fetch("http://127.0.0.1:8081/list_files")
+      fetch(BASE_URL + "/list_files")
       .then(res => res.json())
       .then(data => {
         const lista = document.getElementById("listaArchivos");
@@ -238,13 +237,13 @@
     function verPDF(nombre) {
       const viewer = document.getElementById("pdfViewer");
       const fileNameText = document.getElementById("fileName");
-      viewer.src = `http://127.0.0.1:8081/upload/${nombre}`;
+      viewer.src = BASE_URL + `/upload/${nombre}`;
       viewer.hidden = false;
       fileNameText.textContent = `📄 Archivo: ${nombre}`;
     }
 
     function deletePDF(nombre) {
-      fetch(`http://127.0.0.1:8081/delete/${nombre}`, {
+      fetch(BASE_URL + `/delete/${nombre}`, {
         method: "DELETE"
       })
       .then(res => res.json())
@@ -262,7 +261,7 @@
     }
 
     function entrenarPDF(nombre) {
-      fetch("http://127.0.0.1:8081/entrenar_pdf", {
+      fetch(BASE_URL + "/entrenar_pdf", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ nombre })
