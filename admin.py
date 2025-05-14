@@ -84,6 +84,10 @@ def dividir_texto(texto, max_tokens=1000):
 # ----------------------------
 # RUTAS PRINCIPALES
 # ----------------------------
+@app.route("/admin")
+def admin():
+    return render_template("admin.html")
+
 @app.route("/upload", methods=["POST", "OPTIONS"])
 def upload_pdf():
     try:
