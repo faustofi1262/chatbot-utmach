@@ -134,11 +134,14 @@ def entrenar_pdf():
 
         for i, fragmento in enumerate(fragmentos):
             try:
-                response = openai.Embedding.create(
+                client = OpenAI(api_key=openai.api_key)
+
+                response = client.embeddings.create(
                     model="text-embedding-ada-002",
                     input=fragmento
-                )
-                embedding = response['data'][0]['embedding']
+            )
+                embedding = response.data[0].embedding
+
 
                 index.upsert(
                     vectors=[
