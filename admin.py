@@ -56,7 +56,7 @@ if index_name not in pc.list_indexes().names():
 else:
     print(f"✅ El índice '{index_name}' ya existe")
 
-index = pc.Index(index_name)
+index = pc.Index(INDEX_NAME)
 
 # Carpeta de carga
 UPLOAD_FOLDER = "./upload"
