@@ -106,6 +106,7 @@ def upload_pdf():
 
         return jsonify({"message": f"Documento {filename} almacenado correctamente."})
     except Exception as e:
+        db.rollback()
         return jsonify({"error": f"Error en el servidor: {str(e)}"}), 500
 
 @app.route("/entrenar_pdf", methods=["POST"])
@@ -147,6 +148,7 @@ def entrenar_pdf():
                 )
                 fragmentos_guardados += 1
             except Exception as e:
+                db.rollback()
                 print(f"❌ Error en fragmento {i}: {str(e)}")
                 continue
 
@@ -158,6 +160,7 @@ def entrenar_pdf():
 
         return jsonify({"message": f"PDF {filename} entrenado correctamente con {fragmentos_guardados} fragmentos."})
     except Exception as e:
+        db.rollback()
         return jsonify({"error": f"Error al entrenar PDF: {str(e)}"}), 500
 
 @app.route("/upload/<filename>")
@@ -183,6 +186,7 @@ def delete_pdf(filename):
 
         return jsonify({"message": f"✅ Archivo {filename} eliminado correctamente."})
     except Exception as e:
+        db.rollback()
         return jsonify({"error": f"❌ Error al eliminar el archivo: {str(e)}"}), 500
 
 @app.route("/list_files")
@@ -193,6 +197,7 @@ def lista_archivos():
         nombres = [fila[0] for fila in resultados]
         return jsonify({"files": nombres})
     except Exception as e:
+        db.rollback()
         return jsonify({"error": str(e)}), 500
 
 @app.route("/listar_vectores")
@@ -207,6 +212,7 @@ def listar_vectores():
         else:
             return jsonify({"message": "No se encontraron vectores en el namespace 'pdf_files'."})
     except Exception as e:
+        db.rollback()
         return jsonify({"error": f"Error al listar vectores: {str(e)}"}), 500
 
 @app.route("/monitorear_pinecone")
@@ -222,6 +228,7 @@ def monitorear_pinecone():
         }
         return jsonify({"data": data}), 200
     except Exception as e:
+        db.rollback()
         return jsonify({"error": f"Error al obtener datos de Pinecone: {str(e)}"}), 500
 
 @app.route("/limpiar_pinecone", methods=["DELETE"])
@@ -241,6 +248,7 @@ def limpiar_pinecone():
 
         return jsonify({"message": "✅ Todos los datos en Pinecone, la base de datos y la carpeta upload han sido eliminados correctamente."})
     except Exception as e:
+        db.rollback()
         return jsonify({"error": f"❌ Error al limpiar Pinecone: {str(e)}"}), 500
 @app.route("/login", methods=["POST"])
 def login():
