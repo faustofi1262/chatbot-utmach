@@ -101,7 +101,7 @@ def upload_pdf():
         pdf_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
         pdf_file.save(pdf_path)
 
-        cursor.execute("INSERT INTO pdf_archivos (nombre, ruta_archivo, fecha_subida) VALUES (%s, %s)", (filename, pdf_path))
+        cursor.execute("INSERT INTO pdf_archivos (nombre, ruta_archivo) VALUES (%s, %s)", (filename, pdf_path))
         db.commit()
 
         return jsonify({"message": f"Documento {filename} almacenado correctamente."})
