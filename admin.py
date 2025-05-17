@@ -22,10 +22,10 @@ CORS(app, supports_credentials=True)
 # ----------------------------
 
 db = psycopg2.connect(
-    host="dpg-d0cmqv3e5dus73ahtvi0-a.ohio-postgres.render.com",
+    host="ep-calm-tooth-a4teb7mi-pooler.us-east-1.aws.neon.tech",
     port=5432,
-    user="chatbot_utmach_db_user",
-    password="OtqdjEoPWs6Nmju61FtNuxKKHewZUm0K",
+    user="chatbot-utmach_db_owner",
+    password="npg_Tq8jFbxgQk0L",
     dbname="chatbot_utmach_db",
     sslmode='require'  # 🔐 Añade esta línea
 )
@@ -128,10 +128,14 @@ def entrenar_pdf():
 
         if not texto_completo.strip():
             return jsonify({"error": "El PDF no contiene texto o no se pudo extraer."}), 400
-
+        # Dividir Texto en fragmentos
         fragmentos = dividir_texto(texto_completo, max_tokens=1000)
+        print("🔍 Texto extraído del PDF (primeros 500 caracteres):")
+        print(texto_completo[:500])
+        print("🧮 Longitud total del texto:", len(texto_completo))
+        # Numero de fragmentos guardados
         fragmentos_guardados = 0
-
+        # Guarda los fragemntos en Pinecone
         for i, fragmento in enumerate(fragmentos):
             try:
                 from openai import OpenAI
@@ -142,7 +146,6 @@ def entrenar_pdf():
                     input=fragmento
             )
                 embedding = response.data[0].embedding
-
 
                 index.upsert(
                     vectors=[
@@ -155,7 +158,7 @@ def entrenar_pdf():
                 db.rollback()
                 print(f"❌ Error en fragmento {i}: {str(e)}")
                 continue
-
+                # Guarda en la Base de Datos
         cursor.execute(
             "INSERT INTO pdf_entrenados (nombre, fecha_entrenamiento, texto_muestra) VALUES (%s, NOW(), %s)",
             (filename, texto_completo[:500])
