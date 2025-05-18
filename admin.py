@@ -26,7 +26,7 @@ db = psycopg2.connect(
     port=5432,
     user="chatbot-utmach_db_owner",
     password="npg_Tq8jFbxgQk0L",
-    dbname="chatbot_utmach_db",
+    dbname="chatbot-utmach_db",
     sslmode='require'  # 🔐 Añade esta línea
 )
 cursor = db.cursor()
