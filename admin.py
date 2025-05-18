@@ -1,15 +1,14 @@
 from flask import Flask, render_template, request, jsonify, send_from_directory
 from flask_cors import CORS
 import pdfplumber
-from openai import OpenAI
 from pinecone import Pinecone, ServerlessSpec
 import pinecone
 import re
 from nltk.tokenize import sent_tokenize
 from nltk import download
-import os
 import psycopg2
 from dotenv import load_dotenv
+import os
 load_dotenv()
 # ----------------------------
 # CONFIGURACIONES GENERALES
@@ -34,7 +33,6 @@ cursor = db.cursor()
 # ----------------------------
 # CONFIGURACIÓN DE API KEYS
 # ----------------------------
-openai.api_key = os.getenv("OPENAI_API_KEY")
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 INDEX_NAME = os.getenv("INDEX_NAME")
 
@@ -139,8 +137,8 @@ def entrenar_pdf():
         for i, fragmento in enumerate(fragmentos):
             try:
                 from openai import OpenAI
-                client = OpenAI(api_key=openai.api_key)
-
+                client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+                # Genera el embedding
                 response = client.embeddings.create(
                     model="text-embedding-ada-002",
                     input=fragmento
