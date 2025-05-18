@@ -105,7 +105,7 @@
 
     <div class="acciones">
       <button onclick="window.location.href='/logout'">Cerrar sesión</button>
-      <button onclick="toggleChatbot()">Ejecutar Chatbot</button>
+      <button onclick="ejecutarmain()">Ejecutar Chatbot</button>
       <button onclick="window.location.href='/admin'">Administración</button>
       <button onclick="exportarCSV()">Exportar métricas a CSV</button>
       <div class="resultado" id="resultado"></div>
@@ -192,6 +192,19 @@ function exportarCSV() {
 }
 
 cargarMetricas();
+function ejecutarMain() {
+  fetch("/ejecutar_main", {
+    method: "POST"
+  })
+  .then(res => res.json())
+  .then(data => {
+    document.getElementById("resultado").textContent = data.message || data.error;
+  })
+  .catch(err => {
+    document.getElementById("resultado").textContent = "❌ No se pudo conectar al servidor.";
+  });
+}
+
 </script>
 </body>
 </html>
