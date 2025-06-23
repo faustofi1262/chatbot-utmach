@@ -152,6 +152,30 @@ def registrar_usuario():
         return jsonify({"message": "✅ Usuario registrado correctamente"})
     except Exception as e:
         return jsonify({"error": f"❌ Error al registrar usuario: {str(e)}"}), 500
+    # Ejecutar chatbot.py directamente
+@app.route("/ejecutar_chatbot", methods=["POST"])
+def ejecutar_chatbot():
+    try:
+        if "chatbot" in processes and processes["chatbot"].poll() is None:
+            return jsonify({"message": "El chatbot ya está en ejecución."}), 200
+
+        proceso = subprocess.Popen(["python", "chatbot.py"])
+        processes["chatbot"] = proceso
+        return jsonify({"message": "✅ chatbot.py se está ejecutando correctamente."}), 200
+    except Exception as e:
+        return jsonify({"error": f"❌ Error al ejecutar chatbot.py: {str(e)}"}), 500
+# Detener chatbot.py
+@app.route("/detener_chatbot", methods=["POST"])
+def detener_chatbot():
+    try:
+        if "chatbot" not in processes or processes["chatbot"].poll() is not None:
+            return jsonify({"message": "El chatbot no está en ejecución."}), 200
+
+        processes["chatbot"].terminate()
+        del processes["chatbot"]
+        return jsonify({"message": "✅ chatbot.py ha sido detenido correctamente."}), 200
+    except Exception as e:
+        return jsonify({"error": f"❌ Error al detener chatbot.py: {str(e)}"}), 500
 
 if __name__ == '__main__':
    app.run(host="0.0.0.0", port=8083, debug=False)

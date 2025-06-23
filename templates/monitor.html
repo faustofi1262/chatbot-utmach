@@ -105,7 +105,7 @@
 
     <div class="acciones">
       <button onclick="window.location.href='/logout'">Cerrar sesión</button>
-      <button onclick="ejecutarMain()">Ejecutar Chatbot</button>
+      <button onclick="toggleChatbot()">Ejecutar Chatbot</button>
       <button onclick="window.location.href='/admin'">Administración</button>
       <button onclick="exportarCSV()">Exportar métricas a CSV</button>
       <div class="resultado" id="resultado"></div>
@@ -203,6 +203,17 @@ function ejecutarMain() {
   .catch(err => {
     document.getElementById("resultado").textContent = "❌ No se pudo conectar al servidor.";
   });
+}
+async function toggleChatbot() {
+  const url = ejecutando ? "/detener_chatbot" : "/ejecutar_chatbot";
+  try {
+    const res = await fetch(url, { method: "POST" });
+    const data = await res.json();
+    document.getElementById("resultado").textContent = data.message || data.error;
+    ejecutando = !ejecutando;
+  } catch (err) {
+    document.getElementById("resultado").textContent = "No se pudo conectar al servidor.";
+  }
 }
 
 </script>
