@@ -2,7 +2,6 @@
 from flask import Flask, render_template, redirect, session, url_for, jsonify, request, send_from_directory
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
-import subprocess
 from datetime import datetime, timedelta
 import os
 import psycopg2
@@ -12,12 +11,6 @@ app = Flask(__name__)
 app.secret_key = 'clave-secreta'
 CORS(app, supports_credentials=True)
 
-# Rutas de los archivos a ejecutar
-MAIN_PATH = 'main.py'
-
-# Procesos activos
-processes = {}
-
 # Conexión a la base de datos
 load_dotenv()
 db = psycopg2.connect(
@@ -26,41 +19,8 @@ db = psycopg2.connect(
     user=os.getenv("DB_USER"),
     password=os.getenv("DB_PASSWORD"),
     dbname=os.getenv("DB_DATABASE")
-    sslmode="require"
 )
 cursor = db.cursor()
-
-# Ejecutar main.py
-@app.route("/ejecutar_main", methods=["POST"])
-def ejecutar_main():
-    try:
-        if "main" in processes and processes["main"].poll() is None:
-            return jsonify({"message": "El chatbot ya está en ejecución."}), 200
-
-        proceso = subprocess.Popen(["python", MAIN_PATH], creationflags=subprocess.CREATE_NEW_CONSOLE)
-        processes["main"] = proceso
-        return jsonify({"message": "✅ main.py se está ejecutando correctamente."}), 200
-    except Exception as e:
-        return jsonify({"error": f"❌ Error al ejecutar main.py: {str(e)}"}), 500
-
-# Detener main.py
-@app.route("/detener_main", methods=["POST"])
-def detener_main():
-    try:
-        if "main" not in processes or processes["main"].poll() is not None:
-            return jsonify({"message": "El chatbot no está en ejecución."}), 200
-
-        processes["main"].terminate()
-        del processes["main"]
-        return jsonify({"message": "✅ main.py ha sido detenido correctamente."}), 200
-    except Exception as e:
-        return jsonify({"error": f"❌ Error al detener main.py: {str(e)}"}), 500
-
-# Estado de main.py
-@app.route("/estado_main")
-def estado_main():
-    estado = "ejecutando" if "main" in processes and processes["main"].poll() is None else "detenido"
-    return jsonify({"estado": estado})
 
 # Métricas de uso
 @app.route('/metricas', methods=['GET'])
@@ -112,9 +72,9 @@ def procesar_login():
     cur.execute("SELECT * FROM usuarios WHERE username = %s", (username,))
     user = cur.fetchone()
 
-    if user and check_password_hash(user[2], password):  # Ajustado para PostgreSQL (sin dictionary=True)
-        session["username"] = user[1]  # username
-        session["rol"] = user[3]       # rol
+    if user and check_password_hash(user[2], password):
+        session["username"] = user[1]
+        session["rol"] = user[3]
         return jsonify({"message": "✅ Login exitoso"})
     else:
         return jsonify({"error": "Usuario o contraseña incorrectos"}), 401
@@ -152,31 +112,6 @@ def registrar_usuario():
         return jsonify({"message": "✅ Usuario registrado correctamente"})
     except Exception as e:
         return jsonify({"error": f"❌ Error al registrar usuario: {str(e)}"}), 500
-    # Ejecutar chatbot.py directamente
-@app.route("/ejecutar_chatbot", methods=["POST"])
-def ejecutar_chatbot():
-    try:
-        if "chatbot" in processes and processes["chatbot"].poll() is None:
-            return jsonify({"message": "El chatbot ya está en ejecución."}), 200
-
-        proceso = subprocess.Popen(["python", "chatbot.py"])
-        processes["chatbot"] = proceso
-        return jsonify({"message": "✅ chatbot.py se está ejecutando correctamente."}), 200
-    except Exception as e:
-        return jsonify({"error": f"❌ Error al ejecutar chatbot.py: {str(e)}"}), 500
-# Detener chatbot.py
-@app.route("/detener_chatbot", methods=["POST"])
-def detener_chatbot():
-    try:
-        if "chatbot" not in processes or processes["chatbot"].poll() is not None:
-            return jsonify({"message": "El chatbot no está en ejecución."}), 200
-
-        processes["chatbot"].terminate()
-        del processes["chatbot"]
-        return jsonify({"message": "✅ chatbot.py ha sido detenido correctamente."}), 200
-    except Exception as e:
-        return jsonify({"error": f"❌ Error al detener chatbot.py: {str(e)}"}), 500
 
 if __name__ == '__main__':
-   app.run(host="0.0.0.0", port=8083, debug=False)
-
+    app.run(host="0.0.0.0", port=8080, debug=False)
