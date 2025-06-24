@@ -19,6 +19,7 @@ db = psycopg2.connect(
     user=os.getenv("DB_USER"),
     password=os.getenv("DB_PASSWORD"),
     dbname=os.getenv("DB_DATABASE")
+    sslmode="require"
 )
 cursor = db.cursor()
 
