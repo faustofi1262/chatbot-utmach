@@ -56,7 +56,7 @@ def obtener_metricas():
 # Login GET
 @app.route("/login", methods=["GET"])
 def mostrar_login():
-    return send_from_directory('', 'login.html')
+    return send_from_directory("login.html")
 
 # Login POST
 @app.route("/login", methods=["POST"])
