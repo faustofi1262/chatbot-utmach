@@ -12,16 +12,15 @@ app.secret_key = 'clave-secreta'
 CORS(app, supports_credentials=True)
 
 # Conexión a la base de datos
-load_dotenv()
-db = psycopg2.connect(
-    host=os.getenv("DB_HOST"),
-    port=os.getenv("DB_PORT"),
-    user=os.getenv("DB_USER"),
-    password=os.getenv("DB_PASSWORD"),
-    dbname=os.getenv("DB_DATABASE")
-    sslmode="require"
-)
-cursor = db.cursor()
+def get_db_connection():
+    return psycopg2.connect(
+        host=os.getenv("DB_HOST"),
+        port=os.getenv("DB_PORT"),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        dbname=os.getenv("DB_DATABASE"),
+        sslmode='require'  # obligatorio para Neon
+    )
 
 # Métricas de uso
 @app.route('/metricas', methods=['GET'])
