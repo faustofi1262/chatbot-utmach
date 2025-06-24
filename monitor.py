@@ -1,5 +1,5 @@
-# monitor.py actualizado y corregido para Render con PostgreSQL
-from flask import Flask, render_template, redirect, session, url_for, jsonify, request, send_from_directory
+# monitor.py corregido para conexión persistente con PostgreSQL (Neon)
+from flask import Flask, render_template, redirect, session, url_for, jsonify, request
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
@@ -20,18 +20,87 @@ def get_db_connection():
         user=os.getenv("DB_USER"),
         password=os.getenv("DB_PASSWORD"),
         dbname=os.getenv("DB_DATABASE"),
-        sslmode='require'  # obligatorio para Neon
+        sslmode='require'
     )
 
-# Métricas de uso
+@app.route("/")
+def home():
+    return redirect("/login")
+
+@app.route("/login", methods=["GET"])
+def mostrar_login():
+    return render_template("login.html")
+
+@app.route("/login", methods=["POST"])
+def procesar_login():
+    data = request.json
+    username = data.get("username")
+    password = data.get("password")
+
+    if not username or not password:
+        return jsonify({"error": "Usuario y contraseña requeridos"}), 400
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM usuarios WHERE username = %s", (username,))
+        user = cur.fetchone()
+        cur.close()
+        conn.close()
+
+        if user and check_password_hash(user[2], password):
+            session["username"] = user[1]
+            session["rol"] = user[3]
+            return jsonify({"message": "✅ Login exitoso"})
+        else:
+            return jsonify({"error": "Usuario o contraseña incorrectos"}), 401
+    except Exception as e:
+        return jsonify({"error": f"❌ Error de base de datos: {str(e)}"}), 500
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("mostrar_login"))
+
+@app.route("/monitor")
+def monitor_interface():
+    if "username" not in session:
+        return redirect("/login")
+    if session.get("rol") != "admin":
+        return "❌ Acceso no autorizado. Debes ser administrador.", 403
+    return render_template("monitor.html")
+
+@app.route("/registrar_usuario", methods=["POST"])
+def registrar_usuario():
+    data = request.json
+    username = data.get("username")
+    password = data.get("password")
+    rol = data.get("rol", "usuario")
+
+    if not username or not password:
+        return jsonify({"error": "Usuario y contraseña requeridos"}), 400
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        hashed = generate_password_hash(password)
+        cur.execute("INSERT INTO usuarios (username, password, rol) VALUES (%s, %s, %s)", (username, hashed, rol))
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({"message": "✅ Usuario registrado correctamente"})
+    except Exception as e:
+        return jsonify({"error": f"❌ Error al registrar usuario: {str(e)}"}), 500
+
 @app.route('/metricas', methods=['GET'])
 def obtener_metricas():
     try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
         hoy = datetime.now().date()
         hace_una_semana = hoy - timedelta(days=7)
         hace_un_mes = hoy - timedelta(days=30)
-
-        cur = db.cursor()
 
         cur.execute("SELECT COUNT(*) FROM conversaciones WHERE DATE(fecha) = %s", (hoy,))
         consultas_dia = cur.fetchone()[0]
@@ -45,6 +114,9 @@ def obtener_metricas():
         cur.execute("SELECT COUNT(DISTINCT user_id) FROM conversaciones")
         ids_unicas = cur.fetchone()[0]
 
+        cur.close()
+        conn.close()
+
         return jsonify({
             "consultas_dia": consultas_dia,
             "consultas_semana": consultas_semana,
@@ -54,69 +126,7 @@ def obtener_metricas():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# Login GET
-@app.route("/login", methods=["GET"])
-def mostrar_login():
-    return render_template("login.html")
-
-# Login POST
-@app.route("/login", methods=["POST"])
-def procesar_login():
-    data = request.json
-    username = data.get("username")
-    password = data.get("password")
-
-    if not username or not password:
-        return jsonify({"error": "Usuario y contraseña requeridos"}), 400
-
-    cur = db.cursor()
-    cur.execute("SELECT * FROM usuarios WHERE username = %s", (username,))
-    user = cur.fetchone()
-
-    if user and check_password_hash(user[2], password):
-        session["username"] = user[1]
-        session["rol"] = user[3]
-        return jsonify({"message": "✅ Login exitoso"})
-    else:
-        return jsonify({"error": "Usuario o contraseña incorrectos"}), 401
-
-# Logout
-@app.route("/logout")
-def logout():
-    session.clear()
-    return redirect(url_for("mostrar_login"))
-
-# Interfaz protegida
-@app.route("/monitor")
-def monitor_interface():
-    if "username" not in session:
-        return redirect("/login")
-    if session.get("rol") != "admin":
-        return "❌ Acceso no autorizado. Debes ser administrador.", 403
-    return render_template("monitor.html")
-
-# Registrar usuario
-@app.route("/registrar_usuario", methods=["POST"])
-def registrar_usuario():
-    try:
-        data = request.json
-        username = data.get("username")
-        password = data.get("password")
-        rol = data.get("rol", "usuario")
-        if not username or not password:
-            return jsonify({"error": "Usuario y contraseña requeridos"}), 400
-
-        hashed = generate_password_hash(password)
-        cur = db.cursor()
-        cur.execute("INSERT INTO usuarios (username, password, rol) VALUES (%s, %s, %s)", (username, hashed, rol))
-        db.commit()
-        return jsonify({"message": "✅ Usuario registrado correctamente"})
-    except Exception as e:
-        return jsonify({"error": f"❌ Error al registrar usuario: {str(e)}"}), 500
-@app.route("/")
-def home():
-    return redirect("/login")
-
-print("✅ Servidor monitor.py iniciado correctamente")
+# Lanzar la aplicación en Render (puerto dinámico)
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)), debug=False)
+
