@@ -12,6 +12,7 @@ app.secret_key = 'clave-secreta'
 CORS(app, supports_credentials=True)
 
 # Conexión a la base de datos
+load_dotenv()
 def get_db_connection():
     return psycopg2.connect(
         host=os.getenv("DB_HOST"),
