@@ -112,6 +112,10 @@ def registrar_usuario():
         return jsonify({"message": "✅ Usuario registrado correctamente"})
     except Exception as e:
         return jsonify({"error": f"❌ Error al registrar usuario: {str(e)}"}), 500
+@app.route("/")
+def home():
+    return redirect("/login")
 
+print("✅ Servidor monitor.py iniciado correctamente")
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=8080, debug=False)
