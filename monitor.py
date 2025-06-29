@@ -45,6 +45,7 @@ def procesar_login():
         cur = conn.cursor()
         cur.execute("SELECT * FROM usuarios WHERE username = %s", (username,))
         user = cur.fetchone()
+        print("DEBUG usuario desde base:", user)
         cur.close()
         conn.close()
 
