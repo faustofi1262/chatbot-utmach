@@ -129,6 +129,5 @@ def obtener_metricas():
 
 # Lanzar la aplicación en Render (puerto dinámico)
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 10000))
-app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)), debug=False)
 
