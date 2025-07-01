@@ -106,29 +106,28 @@ def mostrar_login():
 # Login POST
 @app.route("/login", methods=["POST"])
 def procesar_login():
-    data = request.json
-    username = data.get("username")
-    password = data.get("password")
-
-    if not username or not password:
-        return jsonify({"error": "Usuario y contraseña requeridos"}), 400
-
     try:
+        data = request.get_json()
+        username = data.get("username")
+        password = data.get("password")
+
         conn = get_db_connection()
         cur = conn.cursor()
         cur.execute("SELECT * FROM usuarios WHERE username = %s", (username,))
         user = cur.fetchone()
-        conn.close()
 
         if user and check_password_hash(user[2], password):
             session["username"] = user[1]
             session["rol"] = user[3]
-            return jsonify({"message": "✅ Login exitoso"})
+            cur.close()
+            conn.close()
+            return jsonify({"message": "✅ Login exitoso"}), 200
         else:
+            cur.close()
+            conn.close()
             return jsonify({"error": "Usuario o contraseña incorrectos"}), 401
-
     except Exception as e:
-        return jsonify({"error": f"❌ Error de servidor: {str(e)}"}), 500
+        return jsonify({"error": f"❌ Error del servidor: {str(e)}"}), 500
 
 
 # Logout
@@ -158,9 +157,13 @@ def registrar_usuario():
             return jsonify({"error": "Usuario y contraseña requeridos"}), 400
 
         hashed = generate_password_hash(password)
-        cur = db.cursor()
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.close()
+        conn.close()
+
         cur.execute("INSERT INTO usuarios (username, password, rol) VALUES (%s, %s, %s)", (username, hashed, rol))
-        db.commit()
+        conn.commit()
         return jsonify({"message": "✅ Usuario registrado correctamente"})
     except Exception as e:
         return jsonify({"error": f"❌ Error al registrar usuario: {str(e)}"}), 500
