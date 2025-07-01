@@ -20,7 +20,8 @@ processes = {}
 
 # Conexión a la base de datos
 load_dotenv()
-db = psycopg2.connect(
+def get_db_connection():
+    return psycopg2.connect(
     host=os.getenv("DB_HOST"),
     port=os.getenv("DB_PORT"),
     user=os.getenv("DB_USER"),
@@ -28,7 +29,11 @@ db = psycopg2.connect(
     dbname=os.getenv("DB_DATABASE"),
     sslmode='require'  # ✅ requerido por Neon
 )
-cursor = db.cursor()
+conn = get_db_connection()
+cur = conn.cursor()
+cur.execute("SELECT * FROM usuarios WHERE username = %s", (username,))
+user = cur.fetchone()
+conn.close()
 
 # Ejecutar main.py
 @app.route("/ejecutar_main", methods=["POST"])
@@ -108,16 +113,23 @@ def procesar_login():
     if not username or not password:
         return jsonify({"error": "Usuario y contraseña requeridos"}), 400
 
-    cur = db.cursor()
-    cur.execute("SELECT * FROM usuarios WHERE username = %s", (username,))
-    user = cur.fetchone()
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM usuarios WHERE username = %s", (username,))
+        user = cur.fetchone()
+        conn.close()
 
-    if user and check_password_hash(user[2], password):  # Ajustado para PostgreSQL (sin dictionary=True)
-        session["username"] = user[1]  # username
-        session["rol"] = user[3]       # rol
-        return jsonify({"message": "✅ Login exitoso"})
-    else:
-        return jsonify({"error": "Usuario o contraseña incorrectos"}), 401
+        if user and check_password_hash(user[2], password):
+            session["username"] = user[1]
+            session["rol"] = user[3]
+            return jsonify({"message": "✅ Login exitoso"})
+        else:
+            return jsonify({"error": "Usuario o contraseña incorrectos"}), 401
+
+    except Exception as e:
+        return jsonify({"error": f"❌ Error de servidor: {str(e)}"}), 500
+
 
 # Logout
 @app.route("/logout")
