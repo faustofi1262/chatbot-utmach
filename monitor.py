@@ -34,7 +34,9 @@ cur = conn.cursor()
 cur.execute("SELECT * FROM usuarios WHERE username = %s", (username,))
 user = cur.fetchone()
 conn.close()
-
+@app.route("/")
+def home():
+    return redirect("/login")
 # Ejecutar main.py
 @app.route("/ejecutar_main", methods=["POST"])
 def ejecutar_main():
@@ -75,7 +77,11 @@ def obtener_metricas():
         hace_una_semana = hoy - timedelta(days=7)
         hace_un_mes = hoy - timedelta(days=30)
 
-        cur = db.cursor()
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.close()
+        conn.close()
+
 
         cur.execute("SELECT COUNT(*) FROM conversaciones WHERE DATE(fecha) = %s", (hoy,))
         consultas_dia = cur.fetchone()[0]
@@ -110,11 +116,6 @@ def procesar_login():
         data = request.get_json()
         username = data.get("username")
         password = data.get("password")
-
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("SELECT * FROM usuarios WHERE username = %s", (username,))
-        user = cur.fetchone()
 
         if user and check_password_hash(user[2], password):
             session["username"] = user[1]
@@ -158,12 +159,11 @@ def registrar_usuario():
 
         hashed = generate_password_hash(password)
         conn = get_db_connection()
-        cur = conn.cursor()
+        cur.execute("INSERT INTO usuarios (username, password, rol) VALUES (%s, %s, %s)", (username, hashed, rol))
+        conn.commit()
         cur.close()
         conn.close()
 
-        cur.execute("INSERT INTO usuarios (username, password, rol) VALUES (%s, %s, %s)", (username, hashed, rol))
-        conn.commit()
         return jsonify({"message": "✅ Usuario registrado correctamente"})
     except Exception as e:
         return jsonify({"error": f"❌ Error al registrar usuario: {str(e)}"}), 500
