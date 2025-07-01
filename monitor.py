@@ -44,8 +44,12 @@ def procesar_login():
         cur = conn.cursor()
         cur.execute("SELECT * FROM usuarios WHERE username = %s", (username,))
         user = cur.fetchone()
+        cur.execute("SELECT * FROM usuarios WHERE username = %s", (username,))
+        user = cur.fetchone()
+        print("👉 Resultado de búsqueda de usuario:", user)
         cur.close()
         conn.close()
+
 
         if user and check_password_hash(user[2], password):
             session["username"] = user[1]
