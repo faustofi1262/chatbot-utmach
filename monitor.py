@@ -51,7 +51,7 @@ def procesar_login():
         conn.close()
 
 
-        if user and check_password_hash(user[2], password):
+        if user and user[2], password:
             session["username"] = user[1]
             session["rol"] = user[3]
             return jsonify({"message": "✅ Login exitoso"}), 200
