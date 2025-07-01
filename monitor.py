@@ -25,7 +25,7 @@ db = psycopg2.connect(
     port=os.getenv("DB_PORT"),
     user=os.getenv("DB_USER"),
     password=os.getenv("DB_PASSWORD"),
-    dbname=os.getenv("DB_DATABASE")
+    dbname=os.getenv("DB_DATABASE"),
     sslmode='require'  # ✅ requerido por Neon
 )
 cursor = db.cursor()
