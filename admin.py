@@ -8,8 +8,9 @@ from nltk.tokenize import sent_tokenize
 from nltk import download
 import psycopg2
 from dotenv import load_dotenv
-import os
 load_dotenv()
+import os
+
 # ----------------------------
 # CONFIGURACIONES GENERALES
 # ----------------------------
