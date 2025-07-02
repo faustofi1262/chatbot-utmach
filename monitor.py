@@ -97,6 +97,13 @@ def registrar_usuario():
         return jsonify({"message": "✅ Usuario registrado correctamente"})
     except Exception as e:
         return jsonify({"error": f"❌ Error al registrar usuario: {str(e)}"}), 500
+@app.route("/admin")
+def admin_interface():
+    if "username" not in session:
+        return redirect("/login")
+    if session.get("rol") != "admin":
+        return "❌ Acceso no autorizado. Debes ser administrador.", 403
+    return render_template("admin.html")
 
 @app.route('/metricas', methods=['GET'])
 def obtener_metricas():
