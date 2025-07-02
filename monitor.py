@@ -33,33 +33,26 @@ def mostrar_login():
 @app.route("/login", methods=["POST"])
 def procesar_login():
     data = request.json
-    print("🔍 Datos recibidos:", data) 
+    print("🔍 Datos recibidos:", data)
+
     username = data.get("username")
     password = data.get("password")
 
     if not username or not password:
         return jsonify({"error": "Usuario y contraseña requeridos"}), 400
 
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("SELECT * FROM usuarios WHERE username = %s", (username,))
-        user = cur.fetchone()
-        cur.execute("SELECT * FROM usuarios WHERE username = %s", (username,))
-        user = cur.fetchone()
-        print("👉 Resultado de búsqueda de usuario:", user)
-        cur.close()
-        conn.close()
+    cur = db.cursor()
+    cur.execute("SELECT * FROM usuarios WHERE username = %s", (username,))
+    user = cur.fetchone()
+    print("🔎 Resultado de búsqueda de usuario:", user)
 
+    if user and user[2] == password:
+        session["username"] = user[1]
+        session["rol"] = user[3]
+        return jsonify({"message": "✅ Login exitoso"})
+    else:
+        return jsonify({"error": "Usuario o contraseña incorrectos"}), 401
 
-        if user and user[2], password:
-            session["username"] = user[1]
-            session["rol"] = user[3]
-            return jsonify({"message": "✅ Login exitoso"}), 200
-        else:
-            return jsonify({"error": "Usuario o contraseña incorrectos"}), 401
-    except Exception as e:
-        return jsonify({"error": f"❌ Error de base de datos: {str(e)}"}), 500
 
 @app.route("/logout")
 def logout():
