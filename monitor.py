@@ -41,18 +41,27 @@ def procesar_login():
     if not username or not password:
         return jsonify({"error": "Usuario y contraseña requeridos"}), 400
 
-    cur = db.cursor()
-    cur.execute("SELECT * FROM usuarios WHERE username = %s", (username,))
-    user = cur.fetchone()
-    print("🔎 Resultado de búsqueda de usuario:", user)
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
 
-    if user and user[2] == password:
-        session["username"] = user[1]
-        session["rol"] = user[3]
-        return jsonify({"message": "✅ Login exitoso"})
-    else:
-        return jsonify({"error": "Usuario o contraseña incorrectos"}), 401
+        cur.execute("SELECT * FROM usuarios WHERE username = %s", (username,))
+        user = cur.fetchone()
+        print("🔎 Resultado de búsqueda de usuario:", user)
 
+        if user and user[2] == password:
+            session["username"] = user[1]
+            session["rol"] = user[3]
+            return jsonify({"message": "✅ Login exitoso"})
+        else:
+            return jsonify({"error": "Usuario o contraseña incorrectos"}), 401
+
+    except Exception as e:
+        return jsonify({"error": f"❌ Error de base de datos: {e}"}), 500
+
+    finally:
+        if 'cur' in locals(): cur.close()
+        if 'conn' in locals(): conn.close()
 
 @app.route("/logout")
 def logout():
