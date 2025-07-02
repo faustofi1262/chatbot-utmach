@@ -6,6 +6,9 @@ from datetime import datetime, timedelta
 import os
 import psycopg2
 from dotenv import load_dotenv
+from werkzeug.utils import secure_filename
+UPLOAD_FOLDER = os.path.join(os.getcwd(), 'archivos_pdf')
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 app = Flask(__name__)
 app.secret_key = 'clave-secreta'
@@ -102,7 +105,23 @@ def registrar_usuario():
         return jsonify({"message": "✅ Usuario registrado correctamente"})
     except Exception as e:
         return jsonify({"error": f"❌ Error al registrar usuario: {str(e)}"}), 500
+@app.route('/upload', methods=['POST'])
+def subir_pdf():
+    try:
+        if 'file' not in request.files:
+            return jsonify({'error': 'No se encontró el archivo en la solicitud'}), 400
 
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': 'Nombre de archivo vacío'}), 400
+
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(UPLOAD_FOLDER, filename)
+        file.save(filepath)
+
+        return jsonify({'message': 'Archivo subido correctamente'})
+    except Exception as e:
+        return jsonify({'error': f'Error al subir el archivo: {str(e)}'}), 500
 @app.route('/metricas', methods=['GET'])
 def obtener_metricas():
     try:
