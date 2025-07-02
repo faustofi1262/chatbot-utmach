@@ -75,7 +75,13 @@ def monitor_interface():
     if session.get("rol") != "admin":
         return "❌ Acceso no autorizado. Debes ser administrador.", 403
     return render_template("monitor.html")
-
+@app.route("/admin")
+def admin_interface():
+    if "username" not in session:
+        return redirect("/login")
+    if session.get("rol") != "admin":
+        return "❌ Acceso no autorizado. Debes ser administrador.", 403
+    return render_template("admin.html")
 @app.route("/registrar_usuario", methods=["POST"])
 def registrar_usuario():
     data = request.json
@@ -85,7 +91,6 @@ def registrar_usuario():
 
     if not username or not password:
         return jsonify({"error": "Usuario y contraseña requeridos"}), 400
-
     try:
         conn = get_db_connection()
         cur = conn.cursor()
@@ -97,13 +102,6 @@ def registrar_usuario():
         return jsonify({"message": "✅ Usuario registrado correctamente"})
     except Exception as e:
         return jsonify({"error": f"❌ Error al registrar usuario: {str(e)}"}), 500
-@app.route("/admin")
-def admin_interface():
-    if "username" not in session:
-        return redirect("/login")
-    if session.get("rol") != "admin":
-        return "❌ Acceso no autorizado. Debes ser administrador.", 403
-    return render_template("admin.html")
 
 @app.route('/metricas', methods=['GET'])
 def obtener_metricas():
