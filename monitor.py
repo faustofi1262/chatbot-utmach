@@ -33,6 +33,7 @@ def mostrar_login():
 @app.route("/login", methods=["POST"])
 def procesar_login():
     data = request.json
+    print("🔍 Datos recibidos:", data) 
     username = data.get("username")
     password = data.get("password")
 
