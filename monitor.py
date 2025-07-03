@@ -105,23 +105,27 @@ def registrar_usuario():
         return jsonify({"message": "✅ Usuario registrado correctamente"})
     except Exception as e:
         return jsonify({"error": f"❌ Error al registrar usuario: {str(e)}"}), 500
+    
 @app.route('/upload', methods=['POST'])
-def subir_pdf():
+def upload():
     try:
-        if 'file' not in request.files:
-            return jsonify({'error': 'No se encontró el archivo en la solicitud'}), 400
-
-        file = request.files['file']
-        if file.filename == '':
+        archivo = request.files['archivo']
+        if archivo.filename == '':
             return jsonify({'error': 'Nombre de archivo vacío'}), 400
-
-        filename = secure_filename(file.filename)
-        filepath = os.path.join(UPLOAD_FOLDER, filename)
-        file.save(filepath)
-
-        return jsonify({'message': 'Archivo subido correctamente'})
+        filepath = os.path.join(UPLOAD_FOLDER, secure_filename(archivo.filename))
+        archivo.save(filepath)
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("INSERT INTO pdf_archivos (nombre) VALUES (%s)", (archivo.filename,))
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({'message': 'Archivo subido correctamente'}), 200
     except Exception as e:
-        return jsonify({'error': f'Error al subir el archivo: {str(e)}'}), 500
+        if 'conn' in locals():
+            conn.rollback()
+            conn.close()
+        return jsonify({'error': str(e)}), 500
     
 @app.route("/list_files")
 def lista_archivos():
