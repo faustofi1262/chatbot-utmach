@@ -122,6 +122,23 @@ def subir_pdf():
         return jsonify({'message': 'Archivo subido correctamente'})
     except Exception as e:
         return jsonify({'error': f'Error al subir el archivo: {str(e)}'}), 500
+    
+@app.route("/list_files")
+def lista_archivos():
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT nombre FROM pdf_archivos")
+        resultados = cur.fetchall()
+        nombres = [fila[0] for fila in resultados]
+        cur.close()
+        conn.close()
+        return jsonify({"files": nombres})
+    except Exception as e:
+        if 'conn' in locals():
+            conn.rollback()
+            conn.close()
+        return jsonify({"error": str(e)}), 500
 @app.route('/metricas', methods=['GET'])
 def obtener_metricas():
     try:
