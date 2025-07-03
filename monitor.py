@@ -7,6 +7,10 @@ import os
 import psycopg2
 from dotenv import load_dotenv
 from werkzeug.utils import secure_filename
+from pinecone import Pinecone, ServerlessSpec
+import pinecone
+import re
+
 UPLOAD_FOLDER = os.path.join(os.getcwd(), 'archivos_pdf')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
@@ -105,6 +109,11 @@ def registrar_usuario():
         return jsonify({"message": "✅ Usuario registrado correctamente"})
     except Exception as e:
         return jsonify({"error": f"❌ Error al registrar usuario: {str(e)}"}), 500
+
+UPLOAD_FOLDER = "./upload"
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
     
 @app.route('/upload', methods=['POST'])
 def upload():
