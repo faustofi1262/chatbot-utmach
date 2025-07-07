@@ -165,6 +165,7 @@ def entrenar_pdf():
                     except Exception as e:
                         retries += 1
                         print(f"❌ Error al enviar fragmento {i} a Pinecone. Intento {retries}/{max_retries}. Error: {str(e)}")
+                
                 if success:
                     print(f"✅ Fragmento {i} almacenado correctamente en Pinecone.")
                 else:
@@ -244,7 +245,7 @@ def listar_vectores():
     except Exception as e:
         return jsonify({"error": f"Error al listar vectores: {str(e)}"}), 500
 # ----------------------------
-# MONITOREAR PINECONE USO DE ESPACIO Y VECTORES
+# MONITOREAR USO DE  PINECONE USO DE ESPACIO Y VECTORES
 # ----------------------------
 @app.route("/monitorear_pinecone")
 def monitorear_pinecone():
