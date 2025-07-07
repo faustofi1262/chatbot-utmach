@@ -165,7 +165,6 @@ def entrenar_pdf():
                     except Exception as e:
                         retries += 1
                         print(f"❌ Error al enviar fragmento {i} a Pinecone. Intento {retries}/{max_retries}. Error: {str(e)}")
-                
                 if success:
                     print(f"✅ Fragmento {i} almacenado correctamente en Pinecone.")
                 else:
