@@ -127,27 +127,40 @@ def registrar_usuario():
 if not os.path.exists("archivos"):
     os.makedirs("archivos")
 
-@app.route('/upload', methods=['POST'])
-def subir_pdf():
-    archivo = request.files['archivo']
-    if archivo.filename == '':
-        return jsonify({"error": "❌ No se seleccionó ningún archivo"}), 400
+@app.route("/upload", methods=["POST"])
+def upload_pdf():
+    if 'pdf' not in request.files:
+        return jsonify({"error": "No se encontró el archivo PDF"}), 400
 
-    nombre = archivo.filename
-    ruta = os.path.join("archivos", nombre)
-    archivo.save(ruta)
+    file = request.files['pdf']
+    if file.filename == '':
+        return jsonify({"error": "Nombre de archivo vacío"}), 400
 
-    # ✅ Inserta correctamente la ruta
+    filename = secure_filename(file.filename)
+    filepath = os.path.join("archivos", filename)
+
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("INSERT INTO pdf_archivos (nombre, ruta_archivo) VALUES (%s, %s)", (nombre, ruta))
-        conn.commit()
-        conn.close()
-        return jsonify({"message": "✅ Archivo subido y guardado correctamente"})
-    except Exception as e:
-        return jsonify({"error": f"❌ Error al guardar en la base de datos: {str(e)}"}), 500
+        file.save(filepath)
+        print(f"✅ Archivo guardado en: {filepath}")
 
+        # Guarda en la base de datos
+        db = get_db_connection()
+        cur = db.cursor()
+
+        cur.execute("""
+            INSERT INTO pdf_archivos (nombre_archivo, ruta_archivo, fecha_subida)
+            VALUES (%s, %s, %s)
+        """, (filename, filepath, datetime.now()))
+
+        db.commit()
+        cur.close()
+        db.close()
+
+        return redirect("/admin")
+
+    except Exception as e:
+        print(f"❌ Error al subir PDF: {e}")
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/entrenar_pdf", methods=["POST"])
 def entrenar_pdf():
