@@ -11,7 +11,12 @@ import pdfplumber
 import os
 import re
 from openai import OpenAI
+# ----------------------------
+# Crea carpeta si no existe
+# ----------------------------
 
+if not os.path.exists("archivos"):
+    os.makedirs("archivos")
 # === Configuración general ===
 app = Flask(__name__)
 app.secret_key = 'clave-secreta'
@@ -119,6 +124,8 @@ def registrar_usuario():
     cur.close()
     conn.close()
     return jsonify({"message": "✅ Usuario registrado correctamente"})
+if not os.path.exists("archivos"):
+    os.makedirs("archivos")
 
 @app.route('/upload', methods=['POST'])
 def subir_pdf():

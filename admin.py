@@ -16,7 +16,12 @@ import os
 # ----------------------------
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
+# ----------------------------
+# Crea carpeta si no existe
+# ----------------------------
 
+if not os.path.exists("archivos"):
+    os.makedirs("archivos")
 # ----------------------------
 # CONEXIÓN A LA BASE DE DATOS
 # ----------------------------
