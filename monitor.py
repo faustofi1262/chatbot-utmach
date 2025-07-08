@@ -70,11 +70,7 @@ def admin_interface():
     if session.get("rol") != "admin":
         return redirect("/login")
     return render_template("admin.html")
-# ... otras rutas como /admin, /upload, etc.
 
-@app.route("/pinecone_status")
-def pinecone_status():
-    return jsonify({"status": "OK"})
 # SUBIDA de PDF con verificación
 @app.route("/upload", methods=["POST"])
 def subir_pdf():
@@ -114,12 +110,15 @@ def subir_pdf():
 @app.route("/")
 def home():
     return redirect("/login")
+# ... otras rutas como /admin, /upload, etc.
+
+@app.route("/pinecone_status")
+def pinecone_status():
+    return jsonify({"status": "OK"})
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
-
-
 
 @app.route("/metricas")
 def metricas():
