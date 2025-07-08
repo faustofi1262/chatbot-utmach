@@ -147,9 +147,27 @@ def entrenar_pdf():
         db.rollback()
         return jsonify({"error": f"Error al entrenar PDF: {str(e)}"}), 500
 
-@app.route("/upload/<filename>")
-def get_uploaded_file(filename):
-    return send_from_directory(app.config["UPLOAD_FOLDER"], filename)
+@app.route('/upload', methods=['POST'])
+def subir_pdf():
+    archivo = request.files['archivo']
+    if archivo.filename == '':
+        return jsonify({"error": "❌ No se seleccionó ningún archivo"}), 400
+
+    nombre = archivo.filename
+    ruta = os.path.join("archivos", nombre)
+    archivo.save(ruta)
+
+    # ✅ Inserta correctamente la ruta
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("INSERT INTO pdf_archivos (nombre, ruta_archivo) VALUES (%s, %s)", (nombre, ruta))
+        conn.commit()
+        conn.close()
+        return jsonify({"message": "✅ Archivo subido y guardado correctamente"})
+    except Exception as e:
+        return jsonify({"error": f"❌ Error al guardar en la base de datos: {str(e)}"}), 500
+
 
 @app.route("/delete/<filename>", methods=["DELETE"])
 def delete_pdf(filename):
@@ -279,4 +297,4 @@ def monitor():
 print("📌 Vectores en Pinecone:", index.describe_index_stats())
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
-    
+
