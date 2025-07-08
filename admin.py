@@ -8,8 +8,9 @@ from nltk.tokenize import sent_tokenize
 from nltk import download
 import psycopg2
 from dotenv import load_dotenv
-import os
 load_dotenv()
+import os
+
 # ----------------------------
 # CONFIGURACIONES GENERALES
 # ----------------------------
@@ -62,7 +63,7 @@ if not os.path.exists(UPLOAD_FOLDER):
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
 # ----------------------------
-# FUNCIONES AUXILIARES 
+# FUNCIONES AUXILIARES
 # ----------------------------
 def dividir_texto(texto, max_tokens=1000):
     oraciones = re.findall(r'[^.!?]*[.!?]', texto, re.DOTALL)
@@ -84,28 +85,6 @@ def dividir_texto(texto, max_tokens=1000):
 @app.route("/admin")
 def admin():
     return render_template("admin.html")
-
-@app.route("/upload", methods=["POST", "OPTIONS"])
-def upload_pdf():
-    try:
-        if request.method == "OPTIONS":
-            return jsonify({"message": "Método OPTIONS permitido"}), 200
-
-        if "file" not in request.files:
-            return jsonify({"error": "No se envió ningún archivo."}), 400
-
-        pdf_file = request.files["file"]
-        filename = pdf_file.filename
-        pdf_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
-        pdf_file.save(pdf_path)
-
-        cursor.execute("INSERT INTO pdf_archivos (nombre, ruta_archivo) VALUES (%s, %s)", (filename, pdf_path))
-        db.commit()
-
-        return jsonify({"message": f"Documento {filename} almacenado correctamente."})
-    except Exception as e:
-        db.rollback()
-        return jsonify({"error": f"Error en el servidor: {str(e)}"}), 500
 
 @app.route("/entrenar_pdf", methods=["POST"])
 def entrenar_pdf():
@@ -300,3 +279,4 @@ def monitor():
 print("📌 Vectores en Pinecone:", index.describe_index_stats())
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
+    
