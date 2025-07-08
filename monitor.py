@@ -102,7 +102,7 @@ def monitor_interface():
 
 @app.route("/admin")
 def admin_interface():
-    if session.get("rol") != "admin":
+    if "username" not in session or session.get("rol") != "admin":
         return redirect("/login")
     return render_template("admin.html")
 
