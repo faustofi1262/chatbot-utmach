@@ -120,20 +120,27 @@ def registrar_usuario():
     conn.close()
     return jsonify({"message": "✅ Usuario registrado correctamente"})
 
-@app.route("/upload", methods=["POST"])
-def upload():
+@app.route('/upload', methods=['POST'])
+def subir_pdf():
     archivo = request.files['archivo']
     if archivo.filename == '':
-        return jsonify({'error': 'Nombre de archivo vacío'}), 400
-    filepath = os.path.join(UPLOAD_FOLDER, secure_filename(archivo.filename))
-    archivo.save(filepath)
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("INSERT INTO pdf_archivos (nombre) VALUES (%s)", (archivo.filename,))
-    conn.commit()
-    cur.close()
-    conn.close()
-    return jsonify({'message': 'Archivo subido correctamente'})
+        return jsonify({"error": "❌ No se seleccionó ningún archivo"}), 400
+
+    nombre = archivo.filename
+    ruta = os.path.join("archivos", nombre)
+    archivo.save(ruta)
+
+    # ✅ Inserta correctamente la ruta
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("INSERT INTO pdf_archivos (nombre, ruta_archivo) VALUES (%s, %s)", (nombre, ruta))
+        conn.commit()
+        conn.close()
+        return jsonify({"message": "✅ Archivo subido y guardado correctamente"})
+    except Exception as e:
+        return jsonify({"error": f"❌ Error al guardar en la base de datos: {str(e)}"}), 500
+
 
 @app.route("/entrenar_pdf", methods=["POST"])
 def entrenar_pdf():
