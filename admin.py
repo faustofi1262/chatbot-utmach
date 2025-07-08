@@ -62,7 +62,7 @@ if not os.path.exists(UPLOAD_FOLDER):
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
 # ----------------------------
-# FUNCIONES AUXILIARES
+# FUNCIONES AUXILIARES 
 # ----------------------------
 def dividir_texto(texto, max_tokens=1000):
     oraciones = re.findall(r'[^.!?]*[.!?]', texto, re.DOTALL)
