@@ -10,10 +10,13 @@ import psycopg2
 from dotenv import load_dotenv
 load_dotenv()
 import os
-from flask import Flask, request, jsonify
+from flask import request, jsonify
+import os
 from datetime import datetime
+
+# Ruta absoluta segura para Render
 UPLOAD_FOLDER = os.path.join(os.getcwd(), 'archivos')
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)  # Crea la carpeta si no existe
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # ----------------------------
 # CONFIGURACIONES GENERALES
@@ -177,9 +180,10 @@ def subir_pdf():
         ruta_absoluta = os.path.join(UPLOAD_FOLDER, nombre)
         archivo.save(ruta_absoluta)
 
-        # Ruta relativa para guardar en DB si lo deseas
-        ruta_relativa = os.path.relpath(ruta_absoluta, os.getcwd())
+        # Guardamos la ruta relativa en DB (opcional)
+        ruta_relativa = f"archivos/{nombre}"
 
+        # Guardar en base de datos
         conn = get_db_connection()
         cur = conn.cursor()
         cur.execute(
