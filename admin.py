@@ -1,78 +1,70 @@
 from flask import Flask, render_template, request, jsonify, send_from_directory
 from flask_cors import CORS
-import pdfplumber
+import re
+import os
+import psycopg2
+from datetime import datetime
+from dotenv import load_dotenv
+from io import BytesIO
+import fitz  # ✅ Usamos PyMuPDF para extraer texto desde memoria
+from openai import OpenAI
 from pinecone import Pinecone, ServerlessSpec
 import pinecone
-import re
-from nltk.tokenize import sent_tokenize
-from nltk import download
-import psycopg2
-from dotenv import load_dotenv
-load_dotenv()
-import os
-from flask import request, jsonify
-import os
-from datetime import datetime
 
-# Ruta absoluta segura para Render
-UPLOAD_FOLDER = os.path.join(os.getcwd(), 'archivos')
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+load_dotenv()
 
 # ----------------------------
 # CONFIGURACIONES GENERALES
 # ----------------------------
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
-# ----------------------------
-# Crea carpeta si no existe
-# ----------------------------
 
-if not os.path.exists("archivos"):
-    os.makedirs("archivos")
+UPLOAD_FOLDER = os.path.join(os.getcwd(), 'archivos')
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+
 # ----------------------------
 # CONEXIÓN A LA BASE DE DATOS
 # ----------------------------
-
 db = psycopg2.connect(
     host="ep-calm-tooth-a4teb7mi-pooler.us-east-1.aws.neon.tech",
     port=5432,
     user="chatbot-utmach_db_owner",
     password="npg_Tq8jFbxgQk0L",
     dbname="chatbot-utmach_db",
-    sslmode='require'  # 🔐 Añade esta línea
+    sslmode='require'
 )
 cursor = db.cursor()
 
-# ----------------------------
-# CONFIGURACIÓN DE API KEYS
-# ----------------------------
-PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
-INDEX_NAME = os.getenv("INDEX_NAME")
+def get_db_connection():
+    return psycopg2.connect(
+        host="ep-calm-tooth-a4teb7mi-pooler.us-east-1.aws.neon.tech",
+        port=5432,
+        user="chatbot-utmach_db_owner",
+        password="npg_Tq8jFbxgQk0L",
+        dbname="chatbot-utmach_db",
+        sslmode='require'
+    )
 
 # ----------------------------
 # CONFIGURACIÓN DE PINECONE
 # ----------------------------
-pc = Pinecone(api_key=PINECONE_API_KEY)
-index_name = INDEX_NAME
+PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
+INDEX_NAME = os.getenv("INDEX_NAME")
 
-if index_name not in pc.list_indexes().names():
+pc = Pinecone(api_key=PINECONE_API_KEY)
+if INDEX_NAME not in pc.list_indexes().names():
     pc.create_index(
-        name=index_name,
+        name=INDEX_NAME,
         dimension=1536,
         metric="cosine",
         spec=ServerlessSpec(cloud="aws", region="us-east-1")
     )
-    print(f"✅ Índice '{index_name}' creado correctamente")
+    print(f"✅ Índice '{INDEX_NAME}' creado correctamente")
 else:
-    print(f"✅ El índice '{index_name}' ya existe")
+    print(f"✅ El índice '{INDEX_NAME}' ya existe")
 
-index = pc.Index(index_name)
-
-# Carpeta de carga
-UPLOAD_FOLDER = "./upload"
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
-app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+index = pc.Index(INDEX_NAME)
 
 # ----------------------------
 # FUNCIONES AUXILIARES
@@ -98,84 +90,14 @@ def dividir_texto(texto, max_tokens=1000):
 def admin():
     return render_template("admin.html")
 
-@app.route("/entrenar_pdf", methods=["POST"])
-def entrenar_pdf():
-    try:
-        data = request.get_json()
-        filename = data.get("nombre")
-        if not filename:
-            return jsonify({"error": "Nombre de archivo no proporcionado"}), 400
-
-        pdf_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
-        if not os.path.exists(pdf_path):
-            return jsonify({"error": "Archivo no encontrado."}), 404
-
-        texto_completo = ""
-        with pdfplumber.open(pdf_path) as pdf:
-            for pagina in pdf.pages:
-                texto_completo += pagina.extract_text() or ""
-
-        if not texto_completo.strip():
-            return jsonify({"error": "El PDF no contiene texto o no se pudo extraer."}), 400
-        # Dividir Texto en fragmentos
-        fragmentos = dividir_texto(texto_completo, max_tokens=1000)
-        print("🔍 Texto extraído del PDF (primeros 500 caracteres):")
-        print(texto_completo[:500])
-        print("🧮 Longitud total del texto:", len(texto_completo))
-        # Numero de fragmentos guardados
-        fragmentos_guardados = 0
-        # Guarda los fragemntos en Pinecone
-        for i, fragmento in enumerate(fragmentos):
-            try:
-                from openai import OpenAI
-                client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-                # Genera el embedding
-                response = client.embeddings.create(
-                    model="text-embedding-ada-002",
-                    input=fragmento
-            )
-                embedding = response.data[0].embedding
-
-                index.upsert(
-                    vectors=[
-                        (f"{filename}_fragmento_{i}", embedding, {"response": fragmento[:500]})
-                    ],
-                    namespace="pdf_files"
-                )
-                fragmentos_guardados += 1
-            except Exception as e:
-                db.rollback()
-                print(f"❌ Error en fragmento {i}: {str(e)}")
-                continue
-                # Guarda en la Base de Datos
-        cursor.execute(
-            "INSERT INTO pdf_entrenados (nombre, fecha_entrenamiento, texto_muestra) VALUES (%s, NOW(), %s)",
-            (filename, texto_completo[:500])
-        )
-        db.commit()
-
-        return jsonify({"message": f"PDF {filename} entrenado correctamente con {fragmentos_guardados} fragmentos."})
-    except Exception as e:
-        db.rollback()
-        return jsonify({"error": f"Error al entrenar PDF: {str(e)}"}), 500
-
-def get_db_connection():
-    return psycopg2.connect(
-        host="ep-calm-tooth-a4teb7mi-pooler.us-east-1.aws.neon.tech",
-        port=5432,
-        user="chatbot-utmach_db_owner",
-        password="npg_Tq8jFbxgQk0L",
-        dbname="chatbot-utmach_db",
-        sslmode='require'
-    )
-@app.route('/upload', methods=['POST'])
+@app.route("/upload", methods=["POST"])
 def subir_pdf():
     archivo = request.files.get('archivo')
     if archivo is None or archivo.filename == '':
         return jsonify({"error": "❌ No se seleccionó ningún archivo"}), 400
 
     nombre = archivo.filename
-    contenido_binario = archivo.read()  # <-- Leemos el binario completo
+    contenido_binario = archivo.read()
 
     try:
         conn = get_db_connection()
@@ -190,14 +112,79 @@ def subir_pdf():
     except Exception as e:
         return jsonify({"error": f"❌ Error al guardar el PDF en Neon: {str(e)}"}), 500
 
+@app.route("/entrenar_pdf", methods=["POST"])
+def entrenar_pdf():
+    try:
+        data = request.get_json()
+        filename = data.get("nombre")
+        if not filename:
+            return jsonify({"error": "Nombre de archivo no proporcionado"}), 400
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT contenido FROM pdf_archivos WHERE nombre = %s", (filename,))
+        resultado = cur.fetchone()
+        conn.close()
+
+        if not resultado:
+            return jsonify({"error": "Archivo no encontrado en la base de datos"}), 404
+
+        buffer = BytesIO(resultado[0])
+        doc = fitz.open(stream=buffer, filetype="pdf")
+        texto_completo = "\n".join([pagina.get_text() for pagina in doc])
+        doc.close()
+
+        if not texto_completo.strip():
+            return jsonify({"error": "El PDF no contiene texto o no se pudo extraer."}), 400
+
+        fragmentos = dividir_texto(texto_completo, max_tokens=1000)
+        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+        fragmentos_guardados = 0
+        for i, fragmento in enumerate(fragmentos):
+            try:
+                response = client.embeddings.create(
+                    model="text-embedding-ada-002",
+                    input=fragmento
+                )
+                embedding = response.data[0].embedding
+                index.upsert(
+                    vectors=[(f"{filename}_fragmento_{i}", embedding, {"response": fragmento[:500]})],
+                    namespace="pdf_files"
+                )
+                fragmentos_guardados += 1
+            except Exception as e:
+                print(f"❌ Error en fragmento {i}: {str(e)}")
+                continue
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT INTO pdf_entrenados (nombre, fecha_entrenamiento, texto_muestra) VALUES (%s, NOW(), %s)",
+            (filename, texto_completo[:500])
+        )
+        conn.commit()
+        conn.close()
+
+        return jsonify({"message": f"✅ PDF {filename} entrenado correctamente con {fragmentos_guardados} fragmentos."})
+    except Exception as e:
+        db.rollback()
+        return jsonify({"error": f"❌ Error al entrenar PDF: {str(e)}"}), 500
+
+@app.route("/list_files")
+def lista_archivos():
+    try:
+        cursor.execute("SELECT nombre FROM pdf_archivos")
+        resultados = cursor.fetchall()
+        nombres = [fila[0] for fila in resultados]
+        return jsonify({"files": nombres})
+    except Exception as e:
+        db.rollback()
+        return jsonify({"error": str(e)}), 500
+
 @app.route("/delete/<filename>", methods=["DELETE"])
 def delete_pdf(filename):
     try:
-        file_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
-
-        if os.path.exists(file_path):
-            os.remove(file_path)
-
         cursor.execute("DELETE FROM pdf_archivos WHERE nombre = %s", (filename,))
         cursor.execute("DELETE FROM pdf_entrenados WHERE nombre = %s", (filename,))
         db.commit()
@@ -211,17 +198,6 @@ def delete_pdf(filename):
     except Exception as e:
         db.rollback()
         return jsonify({"error": f"❌ Error al eliminar el archivo: {str(e)}"}), 500
-
-@app.route("/list_files")
-def lista_archivos():
-    try:
-        cursor.execute("SELECT nombre FROM pdf_archivos")
-        resultados = cursor.fetchall()
-        nombres = [fila[0] for fila in resultados]
-        return jsonify({"files": nombres})
-    except Exception as e:
-        db.rollback()
-        return jsonify({"error": str(e)}), 500
 
 @app.route("/listar_vectores")
 def listar_vectores():
@@ -259,20 +235,15 @@ def limpiar_pinecone():
     try:
         index.delete(delete_all=True, namespace="pdf_files")
 
-        folder = './upload'
-        for filename in os.listdir(folder):
-            file_path = os.path.join(folder, filename)
-            if os.path.isfile(file_path):
-                os.remove(file_path)
-
         cursor.execute("TRUNCATE TABLE pdf_archivos RESTART IDENTITY CASCADE")
         cursor.execute("TRUNCATE TABLE pdf_entrenados RESTART IDENTITY CASCADE")
         db.commit()
 
-        return jsonify({"message": "✅ Todos los datos en Pinecone, la base de datos y la carpeta upload han sido eliminados correctamente."})
+        return jsonify({"message": "✅ Todos los datos en Pinecone y la base de datos han sido eliminados correctamente."})
     except Exception as e:
         db.rollback()
         return jsonify({"error": f"❌ Error al limpiar Pinecone: {str(e)}"}), 500
+
 @app.route("/login", methods=["POST"])
 def login():
     try:
@@ -280,33 +251,16 @@ def login():
         username = data.get("username").strip()
         password = data.get("password").strip()
 
-        print("🔵 Usuario recibido:", username)
-        print("🟠 Contraseña recibida:", password)
-
         cursor.execute("SELECT password FROM usuarios WHERE username = %s", (username,))
         resultado = cursor.fetchone()
 
-        print("🟣 Resultado en base de datos:", resultado)
-
-        if resultado:
-            print("🔒 Comparando:", resultado[0], "vs", password)
-        
         if resultado and resultado[0].strip() == password:
-            print("✅ Coincidencia encontrada. Acceso permitido.")
             return jsonify({"message": "Login exitoso"}), 200
         else:
-            print("❌ No coincide la contraseña o usuario.")
             return jsonify({"error": "Usuario o contraseña incorrectos"}), 401
     except Exception as e:
-        print(f"🔥 ERROR en backend: {str(e)}")
         return jsonify({"error": f"Error en la autenticación: {str(e)}"}), 500
 
-@app.route("/debug", methods=["GET"])
-def debug():
-    return jsonify({"status": "API activa"}), 200
-@app.route("/ping", methods=["GET"])
-def ping():
-    return jsonify({"message": "Backend activo"}), 200
 @app.route("/")
 def mostrar_login():
     return render_template("login.html")
@@ -318,4 +272,5 @@ def monitor():
 print("📌 Vectores en Pinecone:", index.describe_index_stats())
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
+
 
