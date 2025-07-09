@@ -95,7 +95,11 @@ def subir_pdf():
     archivo = request.files.get('archivo')
     if archivo is None or archivo.filename == '':
         return jsonify({"error": "❌ No se seleccionó ningún archivo"}), 400
-
+    print("📝 Archivo recibido:", archivo.filename)  # ✅ Línea de depuración 1
+    archivo.seek(0, os.SEEK_END)
+    tamano = archivo.tell()
+    archivo.seek(0)  # volver al inicio para poder leer después
+    print("📦 Tamaño del archivo:", tamano, "bytes")  # ✅ Línea de depuración 2
     nombre = archivo.filename
     contenido_binario = archivo.read()
 
