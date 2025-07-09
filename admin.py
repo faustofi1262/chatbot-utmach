@@ -10,6 +10,10 @@ import psycopg2
 from dotenv import load_dotenv
 load_dotenv()
 import os
+from flask import Flask, request, jsonify
+from datetime import datetime
+UPLOAD_FOLDER = os.path.join(os.getcwd(), 'archivos')
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)  # Crea la carpeta si no existe
 
 # ----------------------------
 # CONFIGURACIONES GENERALES
@@ -152,27 +156,42 @@ def entrenar_pdf():
         db.rollback()
         return jsonify({"error": f"Error al entrenar PDF: {str(e)}"}), 500
 
+def get_db_connection():
+    return psycopg2.connect(
+        host="ep-calm-tooth-a4teb7mi-pooler.us-east-1.aws.neon.tech",
+        port=5432,
+        user="chatbot-utmach_db_owner",
+        password="npg_Tq8jFbxgQk0L",
+        dbname="chatbot-utmach_db",
+        sslmode='require'
+    )
+
 @app.route('/upload', methods=['POST'])
 def subir_pdf():
-    archivo = request.files['archivo']
-    if archivo.filename == '':
+    archivo = request.files.get('archivo')
+    if archivo is None or archivo.filename == '':
         return jsonify({"error": "❌ No se seleccionó ningún archivo"}), 400
 
-    nombre = archivo.filename
-    ruta = os.path.join("archivos", nombre)
-    archivo.save(ruta)
-
-    # ✅ Inserta correctamente la ruta
     try:
+        nombre = archivo.filename
+        ruta_absoluta = os.path.join(UPLOAD_FOLDER, nombre)
+        archivo.save(ruta_absoluta)
+
+        # Ruta relativa para guardar en DB si lo deseas
+        ruta_relativa = os.path.relpath(ruta_absoluta, os.getcwd())
+
         conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute("INSERT INTO pdf_archivos (nombre, ruta_archivo) VALUES (%s, %s)", (nombre, ruta))
+        cur.execute(
+            "INSERT INTO pdf_archivos (nombre, ruta_archivo, fecha_subida) VALUES (%s, %s, %s)",
+            (nombre, ruta_relativa, datetime.now())
+        )
         conn.commit()
         conn.close()
+
         return jsonify({"message": "✅ Archivo subido y guardado correctamente"})
     except Exception as e:
         return jsonify({"error": f"❌ Error al guardar en la base de datos: {str(e)}"}), 500
-
 
 @app.route("/delete/<filename>", methods=["DELETE"])
 def delete_pdf(filename):
