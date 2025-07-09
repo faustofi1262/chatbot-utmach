@@ -168,34 +168,27 @@ def get_db_connection():
         dbname="chatbot-utmach_db",
         sslmode='require'
     )
-
 @app.route('/upload', methods=['POST'])
 def subir_pdf():
     archivo = request.files.get('archivo')
     if archivo is None or archivo.filename == '':
         return jsonify({"error": "❌ No se seleccionó ningún archivo"}), 400
 
+    nombre = archivo.filename
+    contenido_binario = archivo.read()  # <-- Leemos el binario completo
+
     try:
-        nombre = archivo.filename
-        ruta_absoluta = os.path.join(UPLOAD_FOLDER, nombre)
-        archivo.save(ruta_absoluta)
-
-        # Guardamos la ruta relativa en DB (opcional)
-        ruta_relativa = f"archivos/{nombre}"
-
-        # Guardar en base de datos
         conn = get_db_connection()
         cur = conn.cursor()
         cur.execute(
-            "INSERT INTO pdf_archivos (nombre, ruta_archivo, fecha_subida) VALUES (%s, %s, %s)",
-            (nombre, ruta_relativa, datetime.now())
+            "INSERT INTO pdf_archivos (nombre, contenido, fecha_subida) VALUES (%s, %s, NOW())",
+            (nombre, psycopg2.Binary(contenido_binario))
         )
         conn.commit()
         conn.close()
-
-        return jsonify({"message": "✅ Archivo subido y guardado correctamente"})
+        return jsonify({"message": "✅ Archivo guardado en Neon correctamente"})
     except Exception as e:
-        return jsonify({"error": f"❌ Error al guardar en la base de datos: {str(e)}"}), 500
+        return jsonify({"error": f"❌ Error al guardar el PDF en Neon: {str(e)}"}), 500
 
 @app.route("/delete/<filename>", methods=["DELETE"])
 def delete_pdf(filename):
