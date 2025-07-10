@@ -158,4 +158,7 @@ def entrenar_pdf():
     except Exception as e:
         db.rollback()
         return jsonify({"error": f"❌ Error al entrenar PDF: {str(e)}"}), 500
+@app.route("/test_upload")
+def test_upload():
+        return render_template("test_upload.html")
 
