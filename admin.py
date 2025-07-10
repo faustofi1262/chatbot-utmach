@@ -160,5 +160,5 @@ def entrenar_pdf():
         return jsonify({"error": f"❌ Error al entrenar PDF: {str(e)}"}), 500
 @app.route("/test_upload")
 def test_upload():
-        return render_template("test_upload.html")
+        return render_template("test_upload")
 
