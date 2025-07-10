@@ -1,11 +1,14 @@
 <!DOCTYPE html>
-<html>
-  <head><title>Test Upload</title></head>
-  <body>
-    <h3>Subida directa de archivo</h3>
-    <form action="/upload" method="POST" enctype="multipart/form-data">
-      <input type="file" name="archivo" />
-      <button type="submit">Subir</button>
-    </form>
-  </body>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Test Subida Directa</title>
+</head>
+<body>
+  <h2>Prueba de subida directa a /upload</h2>
+  <form action="/upload" method="POST" enctype="multipart/form-data">
+    <input type="file" name="archivo" required>
+    <button type="submit">Subir archivo</button>
+  </form>
+</body>
 </html>
