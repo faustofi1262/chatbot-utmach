@@ -26,9 +26,7 @@ def get_db_connection():
         dbname="chatbot-utmach_db",
         sslmode="require"
     )
-@app.route("/monitor")
-def monitor():
-    return render_template("monitor.html")
+
 # Ruta para renderizar login
 @app.route("/login", methods=["GET"])
 def mostrar_login():
@@ -161,3 +159,6 @@ def abrir_chatbot():
     if not session.get("rol"):
         return redirect("/login")
     return "<h1>Chatbot funcionando... (aquí va tu integración)</h1>"
+@app.route("/monitor")
+def monitor():
+    return render_template("monitor.html")
