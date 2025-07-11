@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_from_directory
 from flask_cors import CORS
 import re
 import os
@@ -6,7 +6,7 @@ import psycopg2
 from datetime import datetime
 from dotenv import load_dotenv
 from io import BytesIO
-import fitz
+import fitz  # ✅ Usamos PyMuPDF para extraer texto desde memoria
 from openai import OpenAI
 from pinecone import Pinecone, ServerlessSpec
 import pinecone
@@ -80,14 +80,10 @@ def dividir_texto(texto, max_tokens=1000):
 @app.route("/upload", methods=["POST"])
 def subir_pdf():
     archivo = request.files.get('archivo')
-    print('🟢 Archivo recibido:', archivo.filename)
-    archivo.seek(0)
-
     if archivo is None or archivo.filename == '':
         return jsonify({"error": "❌ No se seleccionó ningún archivo"}), 400
 
-    print("🟢 Archivo recibido:", archivo.filename)
-    archivo.seek(0)
+    nombre = archivo.filename
     contenido_binario = archivo.read()
 
     try:
@@ -95,7 +91,7 @@ def subir_pdf():
         cur = conn.cursor()
         cur.execute(
             "INSERT INTO pdf_archivos (nombre, contenido, fecha_subida) VALUES (%s, %s, NOW())",
-            (archivo.filename, psycopg2.Binary(contenido_binario))
+            (nombre, psycopg2.Binary(contenido_binario))
         )
         conn.commit()
         conn.close()
