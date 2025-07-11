@@ -164,4 +164,8 @@ def entrenar_pdf():
 @app.route("/test_upload")
 def test_upload():
         return render_template("test_upload")
+@app.route("/monitor")
+def monitor():
+    return render_template("monitor.html")
+
 
