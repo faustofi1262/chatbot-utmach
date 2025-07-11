@@ -1,128 +1,286 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8" />
-    <title>Panel de Administración - Chatbot UTMACH</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <style>
-        body { background-color: #f8f9fa; font-family: Arial, sans-serif; }
-        .panel { background-color: #003366; color: white; padding: 20px; border-radius: 10px; }
-        .preview { background-color: #e9ecef; padding: 20px; border-radius: 10px; min-height: 200px; }
-        .btn-primary { background-color: #005bac; border-color: #004a94; }
-        .btn-primary:hover { background-color: #004a94; }
-        h3, h4, h5 { color: #003366; }
-        .file-list a { color: #003366; font-weight: bold; }
-    </style>
+  <script>
+    const BASE_URL = window.location.origin;
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Panel de Administración - Chatbot UTMACH</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
+    body {
+      background-color: #fafafa;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .header {
+      width: 100%;
+      max-width: 1200px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .header h1 { font-size: 24px; font-weight: bold; color: #003366; }
+    .logout-btn {
+      background-color: #003366;
+      color: white;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .container {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 20px;
+      width: 100%;
+      max-width: 1200px;
+    }
+    .panel {
+      padding: 25px;
+      border-radius: 10px;
+      background: rgb(179, 197, 237);
+      box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.1);
+    }
+    #leftPanel {
+      background: linear-gradient(135deg, #0056b3, #003366);
+      color: rgb(255, 254, 254);
+    }
+    h2 { font-size: 20px; margin-bottom: 15px; }
+    input[type="file"] {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      border: none;
+      border-radius: 5px;
+    }
+    button {
+      padding: 10px 15px;
+      border: none;
+      border-radius: 5px;
+      margin: 5px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+    button:hover { transform: scale(1.05); }
+    .upload-btn { background-color: #0066cc; color: white; }
+    .file-entry {
+      background-color: #eef1f8;
+      color: #003366;
+      padding: 10px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .file-buttons button { margin-left: 8px; }
+    .view-btn { background-color: #007bff; color: white; }
+    .train-btn { background-color: #17a2b8; color: white; }
+    .delete-btn { background-color: #de0e0e; color: white; }
+    iframe {
+      width: 100%;
+      height: 500px;
+      border: none;
+      margin-top: 10px;
+    }
+    #fileName { font-weight: bold; margin-bottom: 10px; }
+    #status { margin-top: 10px; font-weight: bold; }
+  </style>
 </head>
-<body>
-    <div class="container-fluid mt-3">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h3><img src="https://upload.wikimedia.org/wikipedia/commons/2/2c/Escudo_UTMACH.png" width="40"> PANEL DE ADMINISTRACIÓN DE ARCHIVOS </h3>
-            <a href="/monitor" class="btn btn-primary">← Volver al panel</a>
-        </div>
+<body onload="cargarListaArchivos()">
+  <div class="header">
+    <div style="display: flex; align-items: center;">
+      <img src="{{ url_for('static', filename='logo.png') }}"  style="height: 70px; margin-right: 20px;" />
+      <h1>PANEL DE ADMINISTRACIÓN DE ARCHIVOS Y ENTRENAMIENTO - Chatbot UTMACH</h1>
+    </div>
+    <div style="text-align: center; margin-bottom: 20px;">
+      <button
+        onclick="window.location.href = BASE_URL + '/monitor'"
+        style="background-color: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 8px; font-size: 16px; display: flex; align-items: center; gap: 8px; margin: auto;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="white" viewBox="0 0 16 16">
+          <path fill-rule="evenodd" d="M15 8a.5.5 0 0 1-.5.5H2.707l4.147 4.146a.5.5 0 0 1-.708.708l-5-5a.5.5 0 0 1 0-.708l5-5a.5.5 0 1 1 .708.708L2.707 7.5H14.5A.5.5 0 0 1 15 8z"/>
+        </svg>
+        Volver al panel
+      </button>
+    </div>
+  </div>
 
-        <div class="row">
-            <!-- Subir documento -->
-            <div class="col-md-4 panel">
-                <h5>📁 Subir Documento PDF</h5>
-                <form id="upload-form" enctype="multipart/form-data">
-                    <div class="form-group">
-                        <input type="file" class="form-control-file" name="archivo" id="archivo" required />
-                    </div>
-                    <button type="submit" class="btn btn-light">📥 Subir Documento</button>
-                </form>
-                <div id="mensaje-subida" class="mt-2"></div>
+  <div class="container">
+    <div id="leftPanel" class="panel">
+      <h2>📂 Subir Documento PDF</h2>
+      <input type="file" id="pdfFile" accept=".pdf" />
+      <button class="upload-btn" onclick="uploadPDF()">📄 Subir Documento</button>
+      <p id="status"></p>
 
-                <hr>
-                <h5>📂 Archivos Subidos</h5>
-                <div id="archivos-subidos" class="mt-2"></div>
-            </div>
-
-            <!-- Vista previa -->
-            <div class="col-md-8 preview">
-                <h5>🧾 Vista Previa del PDF</h5>
-                <div id="vista-previa">
-                    <p>No hay archivos seleccionados</p>
-                </div>
-            </div>
-        </div>
-
-        <hr>
-        <h4 class="text-center mt-4">Monitor de Pinecone</h4>
-        <div class="text-center">
-            <p id="estado-pinecone" class="text-danger">Cargando estado...</p>
-        </div>
+      <h2 style="margin-top: 30px;">📁 Archivos Subidos</h2>
+      <div id="listaArchivos"></div>
     </div>
 
-    <script>
-        document.getElementById("upload-form").addEventListener("submit", async function(e) {
-            e.preventDefault();
-            const formData = new FormData();
-            const archivoInput = document.getElementById("archivo");
-            formData.append("archivo", archivoInput.files[0]);
+    <div id="rightPanel" class="panel">
+      <h2>📔 Vista Previa del PDF</h2>
+      <p id="fileName">No hay archivos seleccionados</p>
+      <iframe id="pdfViewer" src="" hidden></iframe>
+    </div>
+  </div>
 
-            try {
-                const res = await fetch("/upload", {
-                    method: "POST",
-                    body: formData
-                });
-                const data = await res.json();
-                document.getElementById("mensaje-subida").innerHTML = `<span class='text-success'>${data.message || data.error}</span>`;
-                cargarArchivosSubidos();
-            } catch (err) {
-                document.getElementById("mensaje-subida").innerHTML = `<span class='text-danger'>Error al subir</span>`;
-            }
+  <h1>Monitor de Pinecone</h1>
+  <div id="monitor-pinecone" style="margin: 20px;">
+    <h2>Estado del Índice de Pinecone</h2>
+    <div>
+      <p>Uso de Espacio: <span id="usoEspacio">Cargando...</span></p>
+      <p>Total de Vectores: <span id="totalVectores">Cargando...</span></p>
+    </div>
+    <div style="display: flex; justify-content: space-around; margin-top: 20px;">
+      <div>
+        <canvas id="graficoEspacio" width="400" height="400"></canvas>
+      </div>
+      <div>
+        <canvas id="graficoVectores" width="400" height="400"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function obtenerDatosPinecone() {
+      try {
+        const response = await fetch(BASE_URL + '/monitorear_pinecone');
+        const data = await response.json();
+        return data.data;
+      } catch (error) {
+        console.error("Error al obtener datos de Pinecone:", error);
+        return null;
+      }
+    }
+
+    async function mostrarGraficos() {
+      const datos = await obtenerDatosPinecone();
+      if (datos) {
+        document.getElementById("usoEspacio").innerText = `Uso de Espacio: ${datos.index_fullness_percentage}%`;
+        document.getElementById("totalVectores").innerText = `Total de Vectores: ${datos.total_vectors}`;
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", mostrarGraficos);
+
+    function logout() {
+      alert("👋 Has cerrado sesión.");
+      window.location.href = BASE_URL + "/logout";
+    }
+
+    function uploadPDF() {
+      const fileInput = document.getElementById("pdfFile");
+      const status = document.getElementById("status");
+
+      if (fileInput.files.length === 0) {
+        status.textContent = "⚠️ Por favor, selecciona un archivo PDF.";
+        status.style.color = "yellow";
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("file", fileInput.files[0]);
+
+      fetch(BASE_URL + "/upload", {
+        method: "POST",
+        body: formData
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.error) {
+          status.textContent = "❌ " + data.error;
+          status.style.color = "red";
+        } else {
+          status.textContent = "✅ " + data.message;
+          status.style.color = "white";
+          fileInput.value = "";
+          cargarListaArchivos();
+        }
+      })
+      .catch(error => {
+        console.error("Error:", error);
+        status.textContent = "❌ Error al subir el documento.";
+        status.style.color = "white";
+      });
+    }
+
+    function cargarListaArchivos() {
+      fetch(BASE_URL + "/list_files")
+      .then(res => res.json())
+      .then(data => {
+        const lista = document.getElementById("listaArchivos");
+        lista.innerHTML = "";
+
+        data.files.forEach(nombre => {
+          const entry = document.createElement("div");
+          entry.className = "file-entry";
+          entry.innerHTML = `
+            <span>${nombre}</span>
+            <div class="file-buttons">
+              <button class="view-btn" onclick="verPDF('${nombre}')">Ver</button>
+              <button class="train-btn" onclick="entrenarPDF('${nombre}')">Entrenar</button>
+              <button class="delete-btn" onclick="deletePDF('${nombre}')">Eliminar</button>
+            </div>
+          `;
+          lista.appendChild(entry);
         });
+      });
+    }
 
-        async function cargarArchivosSubidos() {
-            try {
-                const res = await fetch('/list_files');
-                const data = await res.json();
+    function verPDF(nombre) {
+      const viewer = document.getElementById("pdfViewer");
+      const fileNameText = document.getElementById("fileName");
+      viewer.src = BASE_URL + `/upload/${nombre}`;
+      viewer.hidden = false;
+      fileNameText.textContent = `📄 Archivo: ${nombre}`;
+    }
 
-                if (data.files && data.files.length > 0) {
-                    let html = "<ul class='file-list'>";
-                    for (const archivo of data.files) {
-                        html += `<li><a href="#" onclick="entrenarArchivo('${archivo}')">${archivo}</a> <button onclick="entrenarArchivo('${archivo}')" class="btn btn-sm btn-success ml-2">Entrenar</button></li>`;
-                    }
-                    html += "</ul>";
-                    document.getElementById("archivos-subidos").innerHTML = html;
-                } else {
-                    document.getElementById("archivos-subidos").innerHTML = "<p>No hay archivos aún.</p>";
-                }
-            } catch (err) {
-                document.getElementById("archivos-subidos").innerHTML = "<p style='color:red;'>Error al obtener archivos</p>";
-            }
+    function deletePDF(nombre) {
+      fetch(BASE_URL + `/delete/${nombre}`, {
+        method: "DELETE"
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.message) {
+          alert(`✅ ${data.message}`);
+          cargarListaArchivos();
+        } else if (data.error) {
+          alert(`❌ Error: ${data.error}`);
         }
+      })
+      .catch(error => {
+        console.error("❌ Error al eliminar el archivo:", error);
+      });
+    }
 
-        async function entrenarArchivo(nombreArchivo) {
-            const confirmacion = confirm(`¿Deseas entrenar el archivo: ${nombreArchivo}?`);
-            if (!confirmacion) return;
-
-            try {
-                const res = await fetch('/entrenar_pdf', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ nombre: nombreArchivo })
-                });
-                const data = await res.json();
-                alert(data.message || data.error);
-            } catch (err) {
-                alert("❌ Error al entrenar archivo.");
-            }
+    function entrenarPDF(nombre) {
+      fetch(BASE_URL + "/entrenar_pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nombre })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.message) {
+          alert("✅ " + data.message);
+        } else if (data.error) {
+          alert("❌ " + data.error);
+        } else {
+          alert("⚠️ Respuesta inesperada del servidor.");
         }
-
-        async function obtenerEstadoPinecone() {
-            try {
-                const res = await fetch('/monitorear_pinecone');
-                const json = await res.json();
-                document.getElementById("estado-pinecone").innerText = `Vectores: ${json.data.total_vectors}, Uso: ${json.data.index_fullness_percentage.toFixed(2)}%`;
-            } catch (err) {
-                document.getElementById("estado-pinecone").innerText = "❌ Error al obtener estado.";
-            }
-        }
-
-        cargarArchivosSubidos();
-        obtenerEstadoPinecone();
-    </script>
+      })
+      .catch(err => {
+        console.error("❌ Error al entrenar:", err);
+        alert("❌ Error al entrenar PDF.");
+      });
+    }
+  </script>
 </body>
-</html>>
+</html>
