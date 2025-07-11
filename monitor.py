@@ -1,5 +1,3 @@
-
-import os
 import csv
 import io
 from flask import Flask, render_template, request, redirect, session, jsonify, send_from_directory, Response
@@ -7,9 +5,6 @@ from flask_cors import CORS
 from werkzeug.utils import secure_filename
 import psycopg2
 from datetime import datetime
-
-
-
 from flask import Flask, request, jsonify, send_from_directory, render_template, redirect, session
 from flask_cors import CORS
 import os
@@ -31,7 +26,9 @@ def get_db_connection():
         dbname="chatbot-utmach_db",
         sslmode="require"
     )
-
+@app.route("/monitor")
+def monitor():
+    return render_template("monitor.html")
 # Ruta para renderizar login
 @app.route("/login", methods=["GET"])
 def mostrar_login():
