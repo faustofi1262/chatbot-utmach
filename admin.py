@@ -80,6 +80,9 @@ def dividir_texto(texto, max_tokens=1000):
 @app.route("/upload", methods=["POST"])
 def subir_pdf():
     archivo = request.files.get('archivo')
+    print('🟢 Archivo recibido:', archivo.filename)
+    archivo.seek(0)
+
     if archivo is None or archivo.filename == '':
         return jsonify({"error": "❌ No se seleccionó ningún archivo"}), 400
 
