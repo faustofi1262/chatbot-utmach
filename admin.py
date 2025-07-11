@@ -163,5 +163,17 @@ def test_upload():
 @app.route("/monitor")
 def monitor():
     return render_template("monitor.html")
+@app.route("/monitorear_pinecone")
+def monitorear_pinecone():
+    try:
+        stats = index.describe_index_stats()
+        index_fullness_percentage = stats['index_fullness'] * 100
+        total_vectors = stats['total_vector_count']
+        return jsonify({
+            "index_fullness_percentage": index_fullness_percentage,
+            "total_vectors": total_vectors
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
