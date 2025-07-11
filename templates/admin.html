@@ -116,8 +116,10 @@
   <div class="container">
     <div id="leftPanel" class="panel">
       <h2>📂 Subir Documento PDF</h2>
+      <form id="formulario" enctype="multipart/form-data" onsubmit="event.preventDefault(); uploadPDF();">
       <input type="file" id="pdfFile" accept=".pdf" />
-      <button class="upload-btn" onclick="uploadPDF()">📄 Subir Documento</button>
+      <button type="submit" class="upload-btn">📄 Subir Documento</button>
+      </form>
       <p id="status"></p>
 
       <h2 style="margin-top: 30px;">📁 Archivos Subidos</h2>
