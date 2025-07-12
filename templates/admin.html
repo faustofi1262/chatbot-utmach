@@ -151,17 +151,33 @@
   </div>
 
   <script>
-    async function obtenerDatosPinecone() {
-      try {
-        const response = await fetch(BASE_URL + '/monitorear_pinecone');
-        const data = await response.json();
-        return data;
-      } catch (error) {
-        console.error("Error al obtener datos de Pinecone:", error);
-        return null;
-      }
+   async function obtenerDatosPinecone() {
+  try {
+    const response = await fetch(BASE_URL + '/monitorear_pinecone');
+    // 🚨 Paso CLAVE: Verifica si la respuesta es exitosa (código de estado 2xx)
+    if (!response.ok) {
+      // Si la respuesta no es OK, lee el cuerpo como texto para ver el mensaje de error del servidor
+      const errorText = await response.text(); 
+      console.error(
+        `Error del servidor al monitorear Pinecone: Estado ${response.status}`,
+        errorText
+      );
+      // Puedes lanzar un error personalizado o retornar null para indicar el fallo
+      throw new Error(
+        `Error HTTP! Estado: ${response.status} - Mensaje: ${errorText}`
+      );
     }
-
+    // Si la respuesta es OK, entonces intenta parsear como JSON
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error al obtener datos de Pinecone:", error);
+    // Puedes actualizar la UI para mostrar un mensaje de error al usuario
+    document.getElementById("usoEspacio").innerText = "Error al cargar.";
+    document.getElementById("totalVectores").innerText = "Error al cargar.";
+    return null; // Retorna null o un objeto de error para que mostrarGraficos sepa que falló
+  }
+}
     async function mostrarGraficos() {
       const datos = await obtenerDatosPinecone();
       if (datos) {
