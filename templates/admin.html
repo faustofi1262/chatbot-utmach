@@ -188,7 +188,7 @@
       }
 
       const formData = new FormData();
-      formData.append("file", fileInput.files[0]);
+      formData.append("archivo", fileInput.files[0]);
 
       fetch(BASE_URL + "/upload", {
         method: "POST",
