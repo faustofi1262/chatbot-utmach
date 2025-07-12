@@ -181,10 +181,50 @@
     async function mostrarGraficos() {
       const datos = await obtenerDatosPinecone();
       if (datos) {
-        document.getElementById("usoEspacio").innerText = `Uso de Espacio: ${datos.index_fullness_percentage}%`;
-        document.getElementById("totalVectores").innerText = `Total de Vectores: ${datos.total_vectors}`;
+  // ... actualiza los innerText
+  const ctxEspacio = document.getElementById('graficoEspacio').getContext('2d');
+  new Chart(ctxEspacio, {
+    type: 'doughnut', // O 'bar', 'pie', etc.
+    data: {
+      labels: ['Usado', 'Disponible'],
+      datasets: [{
+        data: [datos.index_fullness_percentage, 100 - datos.index_fullness_percentage],
+        backgroundColor: ['#003366', '#eef1f8'],
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        title: {
+          display: true,
+          text: 'Uso de Espacio del Índice'
+        }
       }
     }
+  });
+
+  const ctxVectores = document.getElementById('graficoVectores').getContext('2d');
+  new Chart(ctxVectores, {
+    type: 'bar',
+    data: {
+      labels: ['Total de Vectores'],
+      datasets: [{
+        label: 'Número de Vectores',
+        data: [datos.total_vectors],
+        backgroundColor: '#0056b3',
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        title: {
+          display: true,
+          text: 'Total de Vectores en Pinecone'
+        }
+      }
+    }
+  });
+}
 
     document.addEventListener("DOMContentLoaded", mostrarGraficos);
 
